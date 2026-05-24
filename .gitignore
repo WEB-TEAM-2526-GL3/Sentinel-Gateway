@@ -1,0 +1,25 @@
+# Node
+node_modules/
+dist/
+coverage/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temp
+tmp/
