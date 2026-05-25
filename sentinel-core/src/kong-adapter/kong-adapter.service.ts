@@ -100,6 +100,58 @@ export class KongAdapterService {
     return data
   }
 
+  async getRoute(serviceName: string, routeId: string): Promise<KongRoute> {
+    const { data } = await firstValueFrom(
+      this.http.get<KongRoute>(
+        `${this.baseUrl}/services/${serviceName}/routes/${routeId}`,
+      ),
+    )
+    return data
+  }
+
+  async listRoutes(serviceName: string): Promise<KongRoute[]> {
+    const { data } = await firstValueFrom(
+      this.http.get<{ data: KongRoute[] }>(
+        `${this.baseUrl}/services/${serviceName}/routes`,
+      ),
+    )
+    return data.data
+  }
+
+  async updateRoute(
+    serviceName: string,
+    routeId: string,
+    updates: {
+      paths?: string[]
+      stripPath?: boolean
+      methods?: string[]
+      hosts?: string[]
+      name?: string
+    },
+  ): Promise<KongRoute> {
+    const { data } = await firstValueFrom(
+      this.http.patch<KongRoute>(
+        `${this.baseUrl}/services/${serviceName}/routes/${routeId}`,
+        {
+          name: updates?.name,
+          paths: updates?.paths,
+          strip_path: updates?.stripPath,
+          methods: updates?.methods,
+          hosts: updates?.hosts,
+        },
+      ),
+    )
+    return data
+  }
+
+  async deleteRoute(serviceName: string, routeId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(
+        `${this.baseUrl}/services/${serviceName}/routes/${routeId}`,
+      ),
+    )
+  }
+
   // ─── Auth ─────────────────────────────────────────────────────────
 
   async createConsumer(username: string): Promise<KongConsumer> {
