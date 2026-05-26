@@ -1,5 +1,6 @@
 volumes:
   kong_db_data: {}
+  sentinel_db_data: {}
 
 networks:
   kong-net:
@@ -65,5 +66,26 @@ services:
       kong-bootstrap:
         condition: service_completed_successfully
     ports:
-      - "8000:8000"   # Proxy
-      - "8001:8001"   # Admin API
+      - "8000:8000" # Proxy
+      - "8001:8001" # Admin API
+
+    #sentinal_db
+  sentinel-database:
+    container_name: sentinel-database
+    image: postgres:15
+    restart: on-failure
+    networks:
+      - kong-net
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel
+      POSTGRES_DB: sentinel_gateway
+    ports:
+      - "5433:5432"
+    volumes:
+      - sentinel_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sentinel"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
