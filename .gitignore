@@ -23,3 +23,6 @@ Thumbs.db
 
 # Temp
 tmp/
+
+
+test_sentinel_app.http

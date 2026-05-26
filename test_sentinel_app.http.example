@@ -1,0 +1,265 @@
+#just replace the api keys for groq and open-router
+@sentinel = http://localhost:3000
+@kongProxy = http://localhost:8000
+
+@openrouterService = openrouter-service
+@openrouterRoute = openrouter-route
+@openrouterKey = ************************************************
+
+@groqService = groq-service
+@groqRoute = groq-route
+@groqKey = **************************************************
+
+
+### 0) Check Kong through Sentinel controller
+GET {{sentinel}}/kong/health
+
+
+
+### 1) Create OpenRouter service + route through Sentinel controller
+POST {{sentinel}}/kong/services
+Content-Type: application/json
+
+{
+  "name": "{{openrouterService}}",
+  "url": "https://openrouter.ai/api",
+  "route": {
+    "name": "{{openrouterRoute}}",
+    "paths": ["/openrouter"],
+    "stripPath": true,
+    "methods": ["GET", "POST", "OPTIONS"]
+  }
+}
+
+
+### 2) Add OpenRouter upstream headers through Sentinel controller
+### This creates a Kong request-transformer plugin on the OpenRouter service.
+POST {{sentinel}}/kong/services/{{openrouterService}}/plugins
+Content-Type: application/json
+
+{
+  "name": "request-transformer",
+  "config": {
+    "add": {
+      "headers": [
+        "Authorization:Bearer {{openrouterKey}}",
+        "HTTP-Referer:http://localhost:3000",
+        "X-OpenRouter-Title:Sentinel Gateway"
+      ]
+    }
+  }
+}
+
+
+### 3) Create Groq service + route through Sentinel controller
+POST {{sentinel}}/kong/services
+Content-Type: application/json
+
+{
+  "name": "{{groqService}}",
+  "url": "https://api.groq.com/openai",
+  "route": {
+    "name": "{{groqRoute}}",
+    "paths": ["/groq"],
+    "stripPath": true,
+    "methods": ["GET", "POST", "OPTIONS"]
+  }
+}
+
+
+### 4) Add Groq upstream Authorization header through Sentinel controller
+### This creates a Kong request-transformer plugin on the Groq service.
+POST {{sentinel}}/kong/services/{{groqService}}/plugins
+Content-Type: application/json
+
+{
+  "name": "request-transformer",
+  "config": {
+    "add": {
+      "headers": [
+        "Authorization:Bearer {{groqKey}}"
+      ]
+    }
+  }
+}
+
+
+### 5) Verify services through Sentinel controller
+GET {{sentinel}}/kong/services
+
+
+### 6) Verify routes through Sentinel controller
+GET {{sentinel}}/kong/routes
+
+
+### 7) Verify OpenRouter plugins through Sentinel controller
+GET {{sentinel}}/kong/services/{{openrouterService}}/plugins
+
+
+### 8) Verify Groq plugins through Sentinel controller
+GET {{sentinel}}/kong/services/{{groqService}}/plugins
+
+### DELETE http://localhost:8001/plugins/:pluginId
+DELETE {{sentinel}}/kong/plugins/************************
+
+
+### 9) Optional: test OpenRouter route through Kong proxy, not Admin API
+### With service url https://openrouter.ai/api and stripPath=true:
+### /openrouter/v1/chat/completions -> https://openrouter.ai/api/v1/chat/completions
+POST {{kongProxy}}/openrouter/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "openai/gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello from Sentinel Gateway through OpenRouter."
+    }
+  ]
+}
+
+
+### 10) Optional: test Groq route through Kong proxy, not Admin API
+### With service url https://api.groq.com/openai and stripPath=true:
+### /groq/v1/chat/completions -> https://api.groq.com/openai/v1/chat/completions
+POST {{kongProxy}}/groq/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "llama-3.1-8b-instant",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Say hello from Sentinel Gateway through Groq."
+    }
+  ]
+}
+
+
+### 11) Optional: update OpenRouter service URL through Sentinel controller
+PATCH {{sentinel}}/kong/services/{{openrouterService}}
+Content-Type: application/json
+
+{
+  "url": "https://openrouter.ai/api"
+}
+
+
+### 12) Optional: update Groq service URL through Sentinel controller
+PATCH {{sentinel}}/kong/services/{{groqService}}
+Content-Type: application/json
+
+{
+  "url": "https://api.groq.com/openai"
+}
+
+
+
+
+
+
+
+
+
+### ============================================================
+### LLM TEST VARIABLES
+### ============================================================
+
+@prompt = how are you?
+
+### OpenRouter models
+@openrouterModel1 = openai/gpt-oss-120b:free
+@openrouterModel2 = openrouter/free
+
+### Groq models
+### These are Groq production model IDs.
+@groqModel1 = llama-3.1-8b-instant
+@groqModel2 = llama-3.3-70b-versatile
+
+
+### ============================================================
+POST {{kongProxy}}/openrouter/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "{{openrouterModel1}}",
+  "messages": [
+    {
+      "role": "user",
+      "content": "{{prompt}}"
+    }
+  ]
+}
+
+
+### 14) Test OpenRouter with another free model/router through Kong proxy
+POST {{kongProxy}}/openrouter/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "{{openrouterModel2}}",
+  "messages": [
+    {
+      "role": "user",
+      "content": "{{prompt}}"
+    }
+  ]
+}
+
+
+
+
+
+### ============================================================
+POST {{kongProxy}}/groq/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "{{groqModel1}}",
+  "messages": [
+    {
+      "role": "user",
+      "content": "{{prompt}}"
+    }
+  ]
+}
+
+
+### 16) Test Groq with llama-3.3-70b-versatile through Kong proxy
+POST {{kongProxy}}/groq/v1/chat/completions
+Content-Type: application/json
+
+{
+  "model": "{{groqModel2}}",
+  "messages": [
+    {
+      "role": "user",
+      "content": "{{prompt}}"
+    }
+  ]
+}
+
+
+
+### ============================================================
+### DELETE TESTS
+### ============================================================
+
+### 17) Delete OpenRouter route through Sentinel controller
+DELETE {{sentinel}}/kong/routes/{{openrouterRoute}}
+
+
+### 18) Delete Groq route through Sentinel controller
+DELETE {{sentinel}}/kong/routes/{{groqRoute}}
+
+
+### 19) Delete OpenRouter service through Sentinel controller
+DELETE {{sentinel}}/kong/services/{{openrouterService}}
+
+
+### 20) Delete Groq service through Sentinel controller
+DELETE {{sentinel}}/kong/services/{{groqService}}
+
+
+
