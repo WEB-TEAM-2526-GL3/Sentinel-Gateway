@@ -5,6 +5,7 @@ import { DuplicateUserEmailError } from './errors/duplicate-user-email.error';
 import { InMemoryUsersRepository } from './infrastructure/in-memory-users.repository';
 import { USERS_REPOSITORY } from './users.constants';
 import { UsersService } from './users.service';
+import { describe, it, beforeEach, expect } from '@jest/globals';
 
 describe('UsersService', () => {
   let usersService: UsersService;

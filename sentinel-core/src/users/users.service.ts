@@ -4,7 +4,7 @@ import { User } from './domain/user';
 import { UserStatus } from './domain/user-status.enum';
 import { CreateAdminUserInput } from './dto/create-admin-user.input';
 import { DuplicateUserEmailError } from './errors/duplicate-user-email.error';
-import { UsersRepository } from './repositories/users.repository';
+import type { UsersRepository } from './repositories/users.repository';
 import { USERS_REPOSITORY } from './users.constants';
 
 @Injectable()
