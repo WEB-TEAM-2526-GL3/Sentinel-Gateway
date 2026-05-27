@@ -10,8 +10,13 @@ export class RequestLimitRepository {
     private readonly repo: Repository<RequestLimit>,
   ) {}
 
-  async findByClientAndProvider(clientId: string, providerId: string): Promise<RequestLimit | null> {
-    return this.repo.findOne({ where: { clientId, providerId, isArchived: false } });
+  async findByClientAndProvider(
+    clientId: string,
+    providerId: string,
+  ): Promise<RequestLimit | null> {
+    return this.repo.findOne({
+      where: { clientId, providerId, isArchived: false },
+    });
   }
 
   async save(limit: RequestLimit): Promise<RequestLimit> {

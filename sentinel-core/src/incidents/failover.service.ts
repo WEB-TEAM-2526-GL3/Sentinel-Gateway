@@ -6,13 +6,15 @@ import { SetFailoverRuleDto } from './dto/set-failover-rule.dto';
 export class FailoverService {
   constructor(private readonly failoverRepo: FailoverRuleRepository) {}
 
-  async shouldFailover(clientId: string, reason: 'dead' | 'limit'): Promise<boolean> {
+  async shouldFailover(
+    clientId: string,
+    reason: 'dead' | 'limit',
+  ): Promise<boolean> {
     const rule = await this.failoverRepo.findByClient(clientId);
     if (!rule) return false;
 
     return reason === 'dead' ? rule.onDead : rule.onLimit;
   }
-
 
   async getRule(clientId: string): Promise<FailoverRule | null> {
     return this.failoverRepo.findByClient(clientId);

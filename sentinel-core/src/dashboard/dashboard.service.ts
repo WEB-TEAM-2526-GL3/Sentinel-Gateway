@@ -47,7 +47,10 @@ export class DashboardService {
   ): string {
     const id = uuid();
     const conn: SseConnection = {
-      id, view, filter, response,
+      id,
+      view,
+      filter,
+      response,
       queue: [],
       draining: false,
       lastActivity: new Date(),
@@ -78,21 +81,25 @@ export class DashboardService {
         ...snapshot.data,
         totalRequests: globalMetrics?.totalRequests ?? 0,
         requestsPerSecond: globalMetrics?.requestsPerSecond ?? 0,
-        errorRate: globalMetrics ? this.computeErrorRate(globalMetrics.statusCodes) : 0,
+        errorRate: globalMetrics
+          ? this.computeErrorRate(globalMetrics.statusCodes)
+          : 0,
         latency: globalMetrics?.latency ?? { p50: 0, p95: 0, p99: 0 },
-        providers: providers.map(p => ({
+        providers: providers.map((p) => ({
           id: p.id,
           name: p.serviceNameCached,
           kind: p.kind,
           healthy: health.get(p.id) ?? true,
         })),
       };
-    }
-
-    else if (conn.view === 'client-detail' && conn.filter.clientId) {
+    } else if (conn.view === 'client-detail' && conn.filter.clientId) {
       const client = await this.clientRepo.findById(conn.filter.clientId);
-      const status = await this.linkService.getClientStatus(conn.filter.clientId);
-      const metrics = this.metricsService.getLatest({ clientId: conn.filter.clientId });
+      const status = await this.linkService.getClientStatus(
+        conn.filter.clientId,
+      );
+      const metrics = this.metricsService.getLatest({
+        clientId: conn.filter.clientId,
+      });
 
       snapshot.data = {
         ...snapshot.data,
@@ -101,13 +108,18 @@ export class DashboardService {
         status: client?.status,
         selectedLink: status.selectedLink,
         secondaries: status.secondaries,
-        metrics: metrics ?? { totalRequests: 0, requestsPerSecond: 0, statusCodes: {}, latency: { p50: 0, p95: 0, p99: 0 } },
+        metrics: metrics ?? {
+          totalRequests: 0,
+          requestsPerSecond: 0,
+          statusCodes: {},
+          latency: { p50: 0, p95: 0, p99: 0 },
+        },
       };
-    }
-
-    else if (conn.view === 'provider-detail' && conn.filter.providerId) {
+    } else if (conn.view === 'provider-detail' && conn.filter.providerId) {
       const provider = await this.providerRepo.findById(conn.filter.providerId);
-      const metrics = this.metricsService.getLatest({ providerId: conn.filter.providerId });
+      const metrics = this.metricsService.getLatest({
+        providerId: conn.filter.providerId,
+      });
       const healthy = this.healthService.getCurrent(conn.filter.providerId);
 
       snapshot.data = {
@@ -120,15 +132,13 @@ export class DashboardService {
         errorRate: metrics ? this.computeErrorRate(metrics.statusCodes) : 0,
         latency: metrics?.latency ?? { p50: 0, p95: 0, p99: 0 },
       };
-    }
-
-    else if (conn.view === 'provider-list') {
+    } else if (conn.view === 'provider-list') {
       const providers = await this.providerRepo.findAllActive();
       const health = this.healthService.getAll();
 
       snapshot.data = {
         ...snapshot.data,
-        providers: providers.map(p => ({
+        providers: providers.map((p) => ({
           id: p.id,
           name: p.serviceNameCached,
           kind: p.kind,
@@ -165,7 +175,11 @@ export class DashboardService {
       this.broadcastToMatching(evt, {
         type: 'update',
         path: 'limits',
-        data: { clientId: evt.clientId, providerId: evt.providerId, exceeded: true },
+        data: {
+          clientId: evt.clientId,
+          providerId: evt.providerId,
+          exceeded: true,
+        },
       });
     });
 
@@ -179,7 +193,7 @@ export class DashboardService {
         });
       }
     });
-    
+
     this.eventEmitter.on('link.activated', (evt) => {
       this.broadcastToMatching(evt, {
         type: 'update',
@@ -210,8 +224,10 @@ export class DashboardService {
 
   private isRelevant(conn: SseConnection, event: any): boolean {
     if (conn.view === 'overview') return !event.clientId; // global events only
-    if (conn.view === 'client-detail') return event.clientId === conn.filter.clientId;
-    if (conn.view === 'provider-detail') return event.providerId === conn.filter.providerId;
+    if (conn.view === 'client-detail')
+      return event.clientId === conn.filter.clientId;
+    if (conn.view === 'provider-detail')
+      return event.providerId === conn.filter.providerId;
     if (conn.view === 'provider-list') return !event.clientId; // global provider events
     return false;
   }
@@ -224,7 +240,9 @@ export class DashboardService {
     try {
       while (conn.queue.length > 0) {
         const msg = conn.queue.shift();
-        conn.response.write(`event: ${msg.type}\ndata: ${JSON.stringify(msg.data)}\n\n`);
+        conn.response.write(
+          `event: ${msg.type}\ndata: ${JSON.stringify(msg.data)}\n\n`,
+        );
         conn.lastActivity = new Date();
       }
     } finally {
@@ -269,7 +287,10 @@ export class DashboardService {
     return total > 0 ? errors / total : 0;
   }
 
-  private buildServiceLabels(filter: { clientId?: string; providerId?: string }): string {
+  private buildServiceLabels(filter: {
+    clientId?: string;
+    providerId?: string;
+  }): string {
     if (filter.clientId && filter.providerId) {
       return `{service="${filter.clientId}-${filter.providerId}-svc"}`;
     }

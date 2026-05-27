@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LinkRepository } from './link.repository';
 import { ProviderRepository } from '../providers/provider.repository';
@@ -18,7 +23,7 @@ export class LinkService {
     private readonly clientRepo: ClientRepository,
     private readonly kongAdapter: KongAdapterService,
     private readonly eventEmitter: EventEmitter2,
-      private readonly cryptoService: CryptoService,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   // ─── Linking ──────────────────────────────────────────────────────
@@ -37,12 +42,15 @@ export class LinkService {
     // If primary, ensure no other primary exists
     if (dto.kind === 'primary') {
       const existingPrimary = await this.linkRepo.findPrimary(dto.clientId);
-      if (existingPrimary) throw new ConflictException('Client already has a primary link');
+      if (existingPrimary)
+        throw new ConflictException('Client already has a primary link');
     }
 
     // Derive Kong names
     const kongServiceName = provider.serviceNameCached;
-    const kongRouteName = `${client.name}-${provider.serviceNameCached}-route`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    const kongRouteName = `${client.name}-${provider.serviceNameCached}-route`
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-');
 
     // 1. Write to DB
     const link = await this.linkRepo.save({
@@ -77,7 +85,10 @@ export class LinkService {
         });
       } else {
         // Request transformer plugin for generic providers
-        const authHeader = this.buildAuthHeader(provider);
+        const authHeader = this.buildAuthHeader(
+          provider,
+          provider.encryptedApiKey,
+        );
         await this.kongAdapter.addPluginToService(kongServiceName, {
           name: 'request-transformer',
           config: { add: { headers: [authHeader] } },
@@ -86,7 +97,11 @@ export class LinkService {
 
       // 5. If primary, update client
       if (dto.kind === 'primary') {
-        await this.clientRepo.save({ ...client, primaryLinkId: link.id, status: 'active' });
+        await this.clientRepo.save({
+          ...client,
+          primaryLinkId: link.id,
+          status: 'active',
+        });
       }
     } catch (err) {
       // Rollback
@@ -94,7 +109,12 @@ export class LinkService {
       throw new Error(`Kong sync failed: ${err.message}`);
     }
 
-    this.eventEmitter.emit('link.created', { linkId: link.id, clientId: dto.clientId, providerId: dto.providerId, kind: dto.kind });
+    this.eventEmitter.emit('link.created', {
+      linkId: link.id,
+      clientId: dto.clientId,
+      providerId: dto.providerId,
+      kind: dto.kind,
+    });
     return link;
   }
 
@@ -105,7 +125,8 @@ export class LinkService {
     if (!client) throw new NotFoundException('Client not found');
 
     const newLink = await this.linkRepo.findById(newLinkId);
-    if (!newLink || newLink.clientId !== clientId) throw new NotFoundException('Link not found');
+    if (!newLink || newLink.clientId !== clientId)
+      throw new NotFoundException('Link not found');
     if (newLink.kind === 'secondary-inactive' || newLink.kind === 'archived') {
       throw new ConflictException('Cannot select an inactive or archived link');
     }
@@ -122,12 +143,19 @@ export class LinkService {
     await this.linkRepo.save({ ...newLink, kind: 'primary' });
 
     // 3. Update client
-    await this.clientRepo.save({ ...client, primaryLinkId: newLinkId, status: 'active' });
+    await this.clientRepo.save({
+      ...client,
+      primaryLinkId: newLinkId,
+      status: 'active',
+    });
 
     // 4. Update Kong route to point to new service
     try {
       const routeId = oldPrimary?.kongRouteName ?? newLink.kongRouteName;
-      await this.kongAdapter.updateRouteService(routeId!, newLink.kongServiceName!);
+      await this.kongAdapter.updateRouteService(
+        routeId!,
+        newLink.kongServiceName!,
+      );
     } catch (err) {
       this.logger.error(`Failed to update Kong route: ${err.message}`);
     }
@@ -152,14 +180,25 @@ export class LinkService {
     if (!failedLink) throw new NotFoundException('Link not found');
 
     // 1. Deactivate failed link
-    await this.linkRepo.save({ ...failedLink, kind: 'secondary-inactive', incidentId });
+    await this.linkRepo.save({
+      ...failedLink,
+      kind: 'secondary-inactive',
+      incidentId,
+    });
 
     // 2. Emit failure event
-    this.eventEmitter.emit('link.failed', { clientId, linkId: failedLinkId, reason, incidentId });
+    this.eventEmitter.emit('link.failed', {
+      clientId,
+      linkId: failedLinkId,
+      reason,
+      incidentId,
+    });
 
     // 3. Search for an active secondary to failover to
-    const activeSecondaries = await this.linkRepo.findActiveSecondaries(clientId);
-    const failoverTarget = activeSecondaries.length > 0 ? activeSecondaries[0] : null;
+    const activeSecondaries =
+      await this.linkRepo.findActiveSecondaries(clientId);
+    const failoverTarget =
+      activeSecondaries.length > 0 ? activeSecondaries[0] : null;
 
     if (failoverTarget) {
       // Promote the found secondary to primary
@@ -175,14 +214,24 @@ export class LinkService {
       const client = await this.clientRepo.findById(clientId);
       if (client) {
         const newStatus = reason === 'dead' ? 'dead' : 'limit';
-        await this.clientRepo.save({ ...client, primaryLinkId: null, status: newStatus });
+        await this.clientRepo.save({
+          ...client,
+          primaryLinkId: null,
+          status: newStatus,
+        });
 
         // Point route to bad service using the cached kongRouteName from the failed link
-        const badServiceName = reason === 'dead' ? 'provider-dead-svc' : 'limit-exceeded-svc';
+        const badServiceName =
+          reason === 'dead' ? 'provider-dead-svc' : 'limit-exceeded-svc';
         try {
-          await this.kongAdapter.updateRouteService(failedLink.kongRouteName!, badServiceName);
+          await this.kongAdapter.updateRouteService(
+            failedLink.kongRouteName!,
+            badServiceName,
+          );
         } catch (err) {
-          this.logger.error(`Failed to point route to bad service: ${err.message}`);
+          this.logger.error(
+            `Failed to point route to bad service: ${err.message}`,
+          );
         }
       }
     }
@@ -191,11 +240,20 @@ export class LinkService {
   async activateLink(linkId: string): Promise<void> {
     const link = await this.linkRepo.findById(linkId);
     if (!link) throw new NotFoundException('Link not found');
-    if (link.kind !== 'secondary-inactive') throw new ConflictException('Only inactive links can be activated');
+    if (link.kind !== 'secondary-inactive')
+      throw new ConflictException('Only inactive links can be activated');
 
     // Clear the incident and make it active
-    await this.linkRepo.save({ ...link, kind: 'secondary-active', incidentId: null });
-    this.eventEmitter.emit('link.activated', { linkId, clientId: link.clientId, providerId: link.providerId });
+    await this.linkRepo.save({
+      ...link,
+      kind: 'secondary-active',
+      incidentId: null,
+    });
+    this.eventEmitter.emit('link.activated', {
+      linkId,
+      clientId: link.clientId,
+      providerId: link.providerId,
+    });
   }
 
   // ─── Archive ──────────────────────────────────────────────────────
@@ -203,7 +261,10 @@ export class LinkService {
   async archiveLink(linkId: string): Promise<void> {
     const link = await this.linkRepo.findById(linkId);
     if (!link) throw new NotFoundException('Link not found');
-    if (link.kind === 'primary') throw new ConflictException('Cannot archive primary link — switch away first');
+    if (link.kind === 'primary')
+      throw new ConflictException(
+        'Cannot archive primary link — switch away first',
+      );
 
     await this.linkRepo.archive(linkId);
     try {
@@ -211,7 +272,11 @@ export class LinkService {
     } catch (err) {
       this.logger.error(`Failed to delete Kong route: ${err.message}`);
     }
-    this.eventEmitter.emit('link.archived', { linkId, clientId: link.clientId, providerId: link.providerId });
+    this.eventEmitter.emit('link.archived', {
+      linkId,
+      clientId: link.clientId,
+      providerId: link.providerId,
+    });
   }
 
   // ─── Queries ──────────────────────────────────────────────────────
@@ -231,16 +296,20 @@ export class LinkService {
 
     const primary = await this.linkRepo.findPrimary(clientId);
     const allLinks = await this.linkRepo.findByClient(clientId);
-    const secondaries = allLinks.filter(l => l.kind !== 'primary' && l.kind !== 'archived');
+    const secondaries = allLinks.filter(
+      (l) => l.kind !== 'primary' && l.kind !== 'archived',
+    );
 
     return {
-      selectedLink: primary ? {
-        linkId: primary.id,
-        providerId: primary.providerId,
-        providerName: primary.kongServiceName,
-        status: 'active',
-      } : null,
-      secondaries: secondaries.map(l => ({
+      selectedLink: primary
+        ? {
+            linkId: primary.id,
+            providerId: primary.providerId,
+            providerName: primary.kongServiceName,
+            status: 'active',
+          }
+        : null,
+      secondaries: secondaries.map((l) => ({
         linkId: l.id,
         providerId: l.providerId,
         providerName: l.kongServiceName,
@@ -248,7 +317,12 @@ export class LinkService {
         incidentId: l.incidentId,
       })),
       blocked: client.status === 'dead' || client.status === 'limit',
-      blockReason: client.status === 'dead' ? 'dead' : client.status === 'limit' ? 'limit' : undefined,
+      blockReason:
+        client.status === 'dead'
+          ? 'dead'
+          : client.status === 'limit'
+            ? 'limit'
+            : undefined,
     };
   }
 
@@ -258,9 +332,12 @@ export class LinkService {
     const decryptedKey = this.cryptoService.decrypt(encryptedKey);
     const auth = provider.auth;
     switch (auth.method) {
-      case 'bearer': return `Authorization: Bearer ${decryptedKey}`;
-      case 'apiKey': return `${auth.headerName}: ${decryptedKey}`;
-      default: return '';
+      case 'bearer':
+        return `Authorization: Bearer ${decryptedKey}`;
+      case 'apiKey':
+        return `${auth.headerName}: ${decryptedKey}`;
+      default:
+        return '';
     }
   }
 
@@ -274,7 +351,8 @@ export class LinkService {
         param_location: 'query',
       },
       model: {
-        provider: (provider as any).aiProvider?.name ?? provider.serviceNameCached,
+        provider:
+          (provider as any).aiProvider?.name ?? provider.serviceNameCached,
         name: (provider as any).aiProvider?.modelName ?? '',
       },
       logging: { log_statistics: true },

@@ -6,8 +6,10 @@ import { LinkService } from './link.service';
 import { ProviderModule } from '../providers/provider.module';
 import { ClientModule } from '../clients/client.module';
 import { KongAdapterModule } from '../kong-adapter/kong-adapter.module';
+import { LinksController } from './links.controller';
 
 @Module({
+  controllers: [LinksController],
   imports: [
     TypeOrmModule.forFeature([ClientProviderLink]),
     ProviderModule,

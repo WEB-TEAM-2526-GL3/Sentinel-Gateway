@@ -75,25 +75,31 @@ export class KongAdapterService {
 
   async listServicePlugins(serviceName: string): Promise<KongPlugin[]> {
     const { data } = await firstValueFrom(
-      this.http.get<{ data: KongPlugin[] }>(`${this.baseUrl}/services/${serviceName}/plugins`),
+      this.http.get<{ data: KongPlugin[] }>(
+        `${this.baseUrl}/services/${serviceName}/plugins`,
+      ),
     );
     return data.data;
   }
 
   // ─── Bad Services (429 / 503) ──────────────────────────────────────
 
-private async ensureBadServices(): Promise<void> {
-  const limitSvc = 'limit-exceeded-svc';
-  const deadSvc = 'provider-dead-svc';
+  private async ensureBadServices(): Promise<void> {
+    const limitSvc = 'limit-exceeded-svc';
+    const deadSvc = 'provider-dead-svc';
 
-  try { await this.getService(limitSvc); } catch {
-    await this.createService(limitSvc, 'http://limit-exceeded:9429');
-  }
+    try {
+      await this.getService(limitSvc);
+    } catch {
+      await this.createService(limitSvc, 'http://limit-exceeded:9429');
+    }
 
-  try { await this.getService(deadSvc); } catch {
-    await this.createService(deadSvc, 'http://provider-dead:9503');
+    try {
+      await this.getService(deadSvc);
+    } catch {
+      await this.createService(deadSvc, 'http://provider-dead:9503');
+    }
   }
-}
 
   // ─── Routes ───────────────────────────────────────────────────────
 

@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProviderRepository } from './provider.repository';
 import { KongAdapterService } from '../kong-adapter/kong-adapter.service';
@@ -6,6 +11,8 @@ import { LinkRepository } from '../links/link.repository';
 import { Provider } from './provider.entity';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { KongPlugin } from '../kong-adapter/kong-adapter.types';
+import { RotateSecretDto } from './dto/rotate-secret.dto';
+import { CryptoService } from '../common/crypto.service';
 
 @Injectable()
 export class ProviderService {
@@ -16,6 +23,7 @@ export class ProviderService {
     private readonly linkRepo: LinkRepository,
     private readonly kongAdapter: KongAdapterService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   // ─── Registration ─────────────────────────────────────────────────
@@ -30,7 +38,10 @@ export class ProviderService {
   }): Promise<Provider> {
     const provider = await this.providerRepo.createGeneric(dto);
     try {
-      await this.kongAdapter.createService(provider.serviceNameCached, provider.baseUrl);
+      await this.kongAdapter.createService(
+        provider.serviceNameCached,
+        provider.baseUrl,
+      );
     } catch (err) {
       await this.providerRepo.archive(provider.id);
       throw new Error(`Kong sync failed: ${err.message}`);
@@ -49,7 +60,10 @@ export class ProviderService {
   }): Promise<Provider> {
     const provider = await this.providerRepo.createAI(dto);
     try {
-      await this.kongAdapter.createService(provider.serviceNameCached, provider.baseUrl);
+      await this.kongAdapter.createService(
+        provider.serviceNameCached,
+        provider.baseUrl,
+      );
     } catch (err) {
       await this.providerRepo.archive(provider.id);
       throw new Error(`Kong sync failed: ${err.message}`);
@@ -64,14 +78,19 @@ export class ProviderService {
     if (!provider) throw new NotFoundException('Provider not found');
 
     const activeLinks = await this.linkRepo.findByProvider(id);
-    const hasActive = activeLinks.some(l => l.kind === 'primary' || l.kind === 'secondary-active');
-    if (hasActive) throw new ConflictException('Provider is still in use by active links');
+    const hasActive = activeLinks.some(
+      (l) => l.kind === 'primary' || l.kind === 'secondary-active',
+    );
+    if (hasActive)
+      throw new ConflictException('Provider is still in use by active links');
 
     await this.providerRepo.archive(id);
     try {
       await this.kongAdapter.deleteService(provider.serviceNameCached);
     } catch (err) {
-      this.logger.error(`Failed to delete Kong service ${provider.serviceNameCached}: ${err.message}`);
+      this.logger.error(
+        `Failed to delete Kong service ${provider.serviceNameCached}: ${err.message}`,
+      );
     }
     this.eventEmitter.emit('provider.archived', { providerId: id });
   }
@@ -84,31 +103,52 @@ export class ProviderService {
 
     // Encrypt the plaintext key for storage
     const encryptedKey = this.cryptoService.encrypt(dto.apiKey);
-    await this.providerRepo.updateBase(providerId, { encryptedApiKey: encryptedKey });
+    await this.providerRepo.updateBase(providerId, {
+      encryptedApiKey: encryptedKey,
+    });
 
     // Update Kong plugins with the plaintext key (Kong needs the real key)
     const links = await this.linkRepo.findByProvider(providerId);
     for (const link of links) {
       try {
         if (provider.kind === 'llm') {
-          const plugins = await this.kongAdapter.listServicePlugins(link.kongServiceName!);
-          const aiProxy = plugins.find((p: KongPlugin) => p.name === 'ai-proxy');
+          const plugins = await this.kongAdapter.listServicePlugins(
+            link.kongServiceName!,
+          );
+          const aiProxy = plugins.find(
+            (p: KongPlugin) => p.name === 'ai-proxy',
+          );
           if (aiProxy) {
             await this.kongAdapter.updatePlugin(aiProxy.id, {
-              auth: { param_name: 'key', param_value: dto.apiKey, param_location: 'query' },
-              model: { provider: (provider as any).aiProvider?.name, name: (provider as any).aiProvider?.modelName },
+              auth: {
+                param_name: 'key',
+                param_value: dto.apiKey,
+                param_location: 'query',
+              },
+              model: {
+                provider: (provider as any).aiProvider?.name,
+                name: (provider as any).aiProvider?.modelName,
+              },
             });
           }
         } else {
-          const plugins = await this.kongAdapter.listServicePlugins(link.kongServiceName!);
-          const transformer = plugins.find((p: KongPlugin) => p.name === 'request-transformer');
+          const plugins = await this.kongAdapter.listServicePlugins(
+            link.kongServiceName!,
+          );
+          const transformer = plugins.find(
+            (p: KongPlugin) => p.name === 'request-transformer',
+          );
           if (transformer) {
             const newHeader = this.buildAuthHeader(provider, dto.apiKey);
-            await this.kongAdapter.updatePlugin(transformer.id, { add: { headers: [newHeader] } });
+            await this.kongAdapter.updatePlugin(transformer.id, {
+              add: { headers: [newHeader] },
+            });
           }
         }
       } catch (err) {
-        this.logger.error(`Failed to rotate secret for link ${link.id}: ${err.message}`);
+        this.logger.error(
+          `Failed to rotate secret for link ${link.id}: ${err.message}`,
+        );
       }
     }
 
@@ -120,9 +160,12 @@ export class ProviderService {
   private buildAuthHeader(provider: Provider, encryptedKey: string): string {
     const auth = provider.auth;
     switch (auth.method) {
-      case 'bearer': return `${auth.headerName}: Bearer ${encryptedKey}`;
-      case 'apiKey': return `${auth.headerName}: ${encryptedKey}`;
-      default: return '';
+      case 'bearer':
+        return `${auth.headerName}: Bearer ${encryptedKey}`;
+      case 'apiKey':
+        return `${auth.headerName}: ${encryptedKey}`;
+      default:
+        return '';
     }
   }
 
@@ -149,14 +192,20 @@ export class ProviderService {
     if (dto.baseUrl) {
       await this.providerRepo.updateBase(id, { baseUrl: dto.baseUrl });
       try {
-        await this.kongAdapter.updateServiceUrl(provider.serviceNameCached, dto.baseUrl);
+        await this.kongAdapter.updateServiceUrl(
+          provider.serviceNameCached,
+          dto.baseUrl,
+        );
       } catch (err) {
         this.logger.error(`Failed to update Kong service URL: ${err.message}`);
       }
     }
 
     const updated = await this.providerRepo.findById(id);
-    this.eventEmitter.emit('provider.updated', { providerId: id, changes: dto });
+    this.eventEmitter.emit('provider.updated', {
+      providerId: id,
+      changes: dto,
+    });
     return updated!;
   }
 }

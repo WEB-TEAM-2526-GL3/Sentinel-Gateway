@@ -23,7 +23,8 @@ export interface AiTokens {
 @Injectable()
 export class PrometheusService {
   private readonly logger = new Logger(PrometheusService.name);
-  private readonly baseUrl = process.env.PROMETHEUS_URL || 'http://localhost:9090';
+  private readonly baseUrl =
+    process.env.PROMETHEUS_URL || 'http://localhost:9090';
 
   constructor(private readonly http: HttpService) {}
 
@@ -35,17 +36,30 @@ export class PrometheusService {
    *   - Per client (global):   service regex  = "{client}-.*"
    *   - Global:                no filter
    */
-  async queryMetrics(filter: MetricsFilter, range = '5m'): Promise<KongMetrics> {
+  async queryMetrics(
+    filter: MetricsFilter,
+    range = '5m',
+  ): Promise<KongMetrics> {
     const labels = this.buildServiceLabels(filter);
 
     const [totalRequests, requestsPerSecond, statusCodes, p50, p95, p99] =
       await Promise.all([
-        this.querySingle(`sum(increase(kong_http_requests_total${labels}[${range}]))`),
-        this.querySingle(`sum(rate(kong_http_requests_total${labels}[${range}]))`),
+        this.querySingle(
+          `sum(increase(kong_http_requests_total${labels}[${range}]))`,
+        ),
+        this.querySingle(
+          `sum(rate(kong_http_requests_total${labels}[${range}]))`,
+        ),
         this.queryStatusCodeBreakdown(labels, range),
-        this.querySingle(`histogram_quantile(0.5, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`),
-        this.querySingle(`histogram_quantile(0.95, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`),
-        this.querySingle(`histogram_quantile(0.99, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`),
+        this.querySingle(
+          `histogram_quantile(0.5, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`,
+        ),
+        this.querySingle(
+          `histogram_quantile(0.95, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`,
+        ),
+        this.querySingle(
+          `histogram_quantile(0.99, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`,
+        ),
       ]);
 
     return {
@@ -68,9 +82,15 @@ export class PrometheusService {
   ): Promise<AiTokens> {
     const labels = `{ai_provider="${providerId}",ai_model="${modelName}"}`;
     const [prompt, completion, total] = await Promise.all([
-      this.querySingle(`sum(increase(kong_ai_llm_tokens_total${labels}{token_type="prompt_tokens"}[${range}]))`),
-      this.querySingle(`sum(increase(kong_ai_llm_tokens_total${labels}{token_type="completion_tokens"}[${range}]))`),
-      this.querySingle(`sum(increase(kong_ai_llm_tokens_total${labels}{token_type="total_tokens"}[${range}]))`),
+      this.querySingle(
+        `sum(increase(kong_ai_llm_tokens_total${labels}{token_type="prompt_tokens"}[${range}]))`,
+      ),
+      this.querySingle(
+        `sum(increase(kong_ai_llm_tokens_total${labels}{token_type="completion_tokens"}[${range}]))`,
+      ),
+      this.querySingle(
+        `sum(increase(kong_ai_llm_tokens_total${labels}{token_type="total_tokens"}[${range}]))`,
+      ),
     ]);
 
     return { prompt, completion, total };

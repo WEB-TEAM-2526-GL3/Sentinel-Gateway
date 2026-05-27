@@ -15,7 +15,10 @@ export class IncidentRepository {
   }
 
   async findByClient(clientId: string): Promise<Incident[]> {
-    return this.repo.find({ where: { cachedClientId: clientId }, order: { timestamp: 'DESC' } });
+    return this.repo.find({
+      where: { cachedClientId: clientId },
+      order: { timestamp: 'DESC' },
+    });
   }
 
   async findByLink(linkId: string): Promise<Incident[]> {

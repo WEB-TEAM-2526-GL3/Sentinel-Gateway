@@ -19,15 +19,24 @@ export class ProviderRepository {
   // ── Finders ──────────────────────────────────────────────────────
 
   async findById(id: string): Promise<Provider | null> {
-    return this.baseRepo.findOne({ where: { id }, relations: ['genericProvider', 'aiProvider'] });
+    return this.baseRepo.findOne({
+      where: { id },
+      relations: ['genericProvider', 'aiProvider'],
+    });
   }
 
   async findByServiceName(serviceName: string): Promise<Provider | null> {
-    return this.baseRepo.findOne({ where: { serviceNameCached: serviceName }, relations: ['genericProvider', 'aiProvider'] });
+    return this.baseRepo.findOne({
+      where: { serviceNameCached: serviceName },
+      relations: ['genericProvider', 'aiProvider'],
+    });
   }
 
   async findAllActive(): Promise<Provider[]> {
-    return this.baseRepo.find({ where: { isArchived: false }, relations: ['genericProvider', 'aiProvider'] });
+    return this.baseRepo.find({
+      where: { isArchived: false },
+      relations: ['genericProvider', 'aiProvider'],
+    });
   }
 
   // ── Creation ─────────────────────────────────────────────────────
@@ -52,7 +61,11 @@ export class ProviderRepository {
     });
     const saved = await this.baseRepo.save(provider);
 
-    const generic = this.genericRepo.create({ provider: saved, providerId: saved.id, name: data.name });
+    const generic = this.genericRepo.create({
+      provider: saved,
+      providerId: saved.id,
+      name: data.name,
+    });
     await this.genericRepo.save(generic);
 
     return (await this.findById(saved.id)!) as Provider;
@@ -79,7 +92,12 @@ export class ProviderRepository {
     });
     const saved = await this.baseRepo.save(provider);
 
-    const ai = this.aiRepo.create({ provider: saved, providerId: saved.id, name: data.name, modelName: data.modelName });
+    const ai = this.aiRepo.create({
+      provider: saved,
+      providerId: saved.id,
+      name: data.name,
+      modelName: data.modelName,
+    });
     await this.aiRepo.save(ai);
 
     return (await this.findById(saved.id)!) as Provider;
@@ -89,14 +107,27 @@ export class ProviderRepository {
 
   async updateBase(
     id: string,
-    changes: Partial<Pick<Provider, 'baseUrl' | 'isArchived' | 'authMethod' | 'authHeaderName' | 'authParamName' | 'encryptedApiKey'>>,
+    changes: Partial<
+      Pick<
+        Provider,
+        | 'baseUrl'
+        | 'isArchived'
+        | 'authMethod'
+        | 'authHeaderName'
+        | 'authParamName'
+        | 'encryptedApiKey'
+      >
+    >,
   ): Promise<Provider> {
     await this.baseRepo.update(id, changes);
     return (await this.findById(id)!) as Provider;
   }
 
   async updateGenericName(id: string, newName: string): Promise<Provider> {
-    const p = await this.baseRepo.findOne({ where: { id }, relations: ['genericProvider'] });
+    const p = await this.baseRepo.findOne({
+      where: { id },
+      relations: ['genericProvider'],
+    });
     if (!p || p.kind !== 'generic') throw new Error('Not a generic provider');
     await this.genericRepo.update({ providerId: id }, { name: newName });
     const newSvc = this.sanitize(newName);
@@ -105,7 +136,10 @@ export class ProviderRepository {
   }
 
   async updateAIModelName(id: string, newModelName: string): Promise<Provider> {
-    const p = await this.baseRepo.findOne({ where: { id }, relations: ['aiProvider'] });
+    const p = await this.baseRepo.findOne({
+      where: { id },
+      relations: ['aiProvider'],
+    });
     if (!p || p.kind !== 'llm') throw new Error('Not an AI provider');
     await this.aiRepo.update({ providerId: id }, { modelName: newModelName });
     const newSvc = this.sanitize(`${p.aiProvider!.name}-${newModelName}`);
@@ -122,6 +156,10 @@ export class ProviderRepository {
   // ── Helpers ──────────────────────────────────────────────────────
 
   private sanitize(raw: string): string {
-    return raw.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return raw
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 }

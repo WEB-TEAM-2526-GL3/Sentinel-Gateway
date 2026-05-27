@@ -31,7 +31,9 @@ export class LinkRepository {
   }
 
   async findAllActive(): Promise<ClientProviderLink[]> {
-    return this.repo.find({ where: { kind: In(['primary', 'secondary-active']) } });
+    return this.repo.find({
+      where: { kind: In(['primary', 'secondary-active']) },
+    });
   }
 
   async save(link: ClientProviderLink): Promise<ClientProviderLink> {

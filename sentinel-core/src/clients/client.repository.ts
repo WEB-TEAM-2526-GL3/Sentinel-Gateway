@@ -15,7 +15,9 @@ export class ClientRepository {
   }
 
   async findAllActive(): Promise<Client[]> {
-    return this.repo.find({ where: { status: In(['active', 'dead', 'limit']) } });
+    return this.repo.find({
+      where: { status: In(['active', 'dead', 'limit']) },
+    });
   }
 
   async save(client: Client): Promise<Client> {

@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { PrometheusService, KongMetrics, AiTokens, MetricsFilter } from './prometheus.service';
+import {
+  PrometheusService,
+  KongMetrics,
+  AiTokens,
+  MetricsFilter,
+} from './prometheus.service';
 import { LinkRepository } from '../links/link.repository';
 import { ProviderRepository } from '../providers/provider.repository';
 
@@ -17,9 +22,9 @@ interface CachedAiTokens {
 @Injectable()
 export class MetricsService {
   private readonly logger = new Logger(MetricsService.name);
-  private cache = new Map<string, CachedMetrics>();       // key: "clientId:providerId"
-  private aiCache = new Map<string, CachedAiTokens>();    // key: "providerId:modelName"
-  private history = new Map<string, KongMetrics[]>();     // ring buffer (last 20)
+  private cache = new Map<string, CachedMetrics>(); // key: "clientId:providerId"
+  private aiCache = new Map<string, CachedAiTokens>(); // key: "providerId:modelName"
+  private history = new Map<string, KongMetrics[]>(); // ring buffer (last 20)
 
   constructor(
     private readonly prometheus: PrometheusService,
@@ -57,7 +62,10 @@ export class MetricsService {
           });
         }
       } catch (err) {
-        this.logger.error(`Metrics poll failed for ${filter.clientId}:${filter.providerId}`, err);
+        this.logger.error(
+          `Metrics poll failed for ${filter.clientId}:${filter.providerId}`,
+          err,
+        );
       }
     }
 
@@ -65,12 +73,20 @@ export class MetricsService {
     const aiPairs = await this.buildAIPairs();
     for (const { providerId, modelName } of aiPairs) {
       try {
-        const tokens = await this.prometheus.queryAiTokens(providerId, modelName, '5m');
+        const tokens = await this.prometheus.queryAiTokens(
+          providerId,
+          modelName,
+          '5m',
+        );
         const key = `${providerId}:${modelName}`;
         const prev = this.aiCache.get(key);
         this.aiCache.set(key, { tokens, timestamp: new Date() });
 
-        if (!prev || prev.tokens.prompt !== tokens.prompt || prev.tokens.completion !== tokens.completion) {
+        if (
+          !prev ||
+          prev.tokens.prompt !== tokens.prompt ||
+          prev.tokens.completion !== tokens.completion
+        ) {
           this.eventEmitter.emit('ai.tokens.updated', {
             providerId,
             modelName,
@@ -78,7 +94,10 @@ export class MetricsService {
           });
         }
       } catch (err) {
-        this.logger.error(`AI token poll failed for ${providerId}:${modelName}`, err);
+        this.logger.error(
+          `AI token poll failed for ${providerId}:${modelName}`,
+          err,
+        );
       }
     }
   }
@@ -101,7 +120,7 @@ export class MetricsService {
 
   // ─── Private Helpers ──────────────────────────────────────────────
 
-    private async buildActiveFilters(): Promise<MetricsFilter[]> {
+  private async buildActiveFilters(): Promise<MetricsFilter[]> {
     const filters: MetricsFilter[] = [
       { clientId: 'global', providerId: 'global' },
     ];
@@ -133,13 +152,15 @@ export class MetricsService {
     return filters;
   }
 
-  private async buildAIPairs(): Promise<{ providerId: string; modelName: string }[]> {
-  const providers = await this.providerRepo.findAllActive();
-  return providers
-      .filter(p => p.kind === 'llm')
-      .map(p => ({
-      providerId: (p as any).name,
-      modelName: (p as any).modelName,
+  private async buildAIPairs(): Promise<
+    { providerId: string; modelName: string }[]
+  > {
+    const providers = await this.providerRepo.findAllActive();
+    return providers
+      .filter((p) => p.kind === 'llm')
+      .map((p) => ({
+        providerId: (p as any).name,
+        modelName: (p as any).modelName,
       }));
   }
 

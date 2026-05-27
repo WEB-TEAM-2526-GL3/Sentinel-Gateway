@@ -1,3 +1,3 @@
 export class RotateSecretDto {
-  apiKey: string;  // plaintext, will be encrypted by the service
+  apiKey: string; // plaintext, will be encrypted by the service
 }
