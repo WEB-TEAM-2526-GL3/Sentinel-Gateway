@@ -78,12 +78,15 @@ export class ProviderService {
 
   // ─── Secret Rotation ─────────────────────────────────────────────
 
-  async rotateSecret(providerId: string, newEncryptedKey: string): Promise<void> {
+  async rotateSecret(providerId: string, dto: RotateSecretDto): Promise<void> {
     const provider = await this.providerRepo.findById(providerId);
     if (!provider) throw new NotFoundException('Provider not found');
 
-    await this.providerRepo.updateBase(providerId, { encryptedApiKey: newEncryptedKey });
+    // Encrypt the plaintext key for storage
+    const encryptedKey = this.cryptoService.encrypt(dto.apiKey);
+    await this.providerRepo.updateBase(providerId, { encryptedApiKey: encryptedKey });
 
+    // Update Kong plugins with the plaintext key (Kong needs the real key)
     const links = await this.linkRepo.findByProvider(providerId);
     for (const link of links) {
       try {
@@ -92,14 +95,15 @@ export class ProviderService {
           const aiProxy = plugins.find((p: KongPlugin) => p.name === 'ai-proxy');
           if (aiProxy) {
             await this.kongAdapter.updatePlugin(aiProxy.id, {
-              auth: { header_name: 'Authorization', header_value: `Bearer ${newEncryptedKey}` },
+              auth: { param_name: 'key', param_value: dto.apiKey, param_location: 'query' },
+              model: { provider: (provider as any).aiProvider?.name, name: (provider as any).aiProvider?.modelName },
             });
           }
         } else {
           const plugins = await this.kongAdapter.listServicePlugins(link.kongServiceName!);
           const transformer = plugins.find((p: KongPlugin) => p.name === 'request-transformer');
           if (transformer) {
-            const newHeader = this.buildAuthHeader(provider, newEncryptedKey);
+            const newHeader = this.buildAuthHeader(provider, dto.apiKey);
             await this.kongAdapter.updatePlugin(transformer.id, { add: { headers: [newHeader] } });
           }
         }

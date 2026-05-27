@@ -81,6 +81,8 @@ services:
     depends_on:
       kong:
         condition: service_healthy
+    networks:
+      - kong-net
     volumes:
       - ./kong.yaml:/kong.yaml
     command: gateway sync --kong-addr http://kong:8001 /kong.yaml

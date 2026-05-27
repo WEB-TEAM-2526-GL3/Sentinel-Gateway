@@ -6,6 +6,7 @@ import { ClientRepository } from '../clients/client.repository';
 import { KongAdapterService } from '../kong-adapter/kong-adapter.service';
 import { ClientProviderLink } from './link.entity';
 import { Provider } from '../providers/provider.entity';
+import { CryptoService } from '../common/crypto.service';
 
 @Injectable()
 export class LinkService {
@@ -17,6 +18,7 @@ export class LinkService {
     private readonly clientRepo: ClientRepository,
     private readonly kongAdapter: KongAdapterService,
     private readonly eventEmitter: EventEmitter2,
+      private readonly cryptoService: CryptoService,
   ) {}
 
   // ─── Linking ──────────────────────────────────────────────────────
@@ -252,26 +254,28 @@ export class LinkService {
 
   // ─── Helpers ──────────────────────────────────────────────────────
 
-  private buildAuthHeader(provider: Provider): string {
+  private buildAuthHeader(provider: Provider, encryptedKey: string): string {
+    const decryptedKey = this.cryptoService.decrypt(encryptedKey);
     const auth = provider.auth;
     switch (auth.method) {
-      case 'bearer': return `Authorization: Bearer ${auth.encryptedApiKey}`;
-      case 'apiKey': return `${auth.headerName}: ${auth.encryptedApiKey}`;
+      case 'bearer': return `Authorization: Bearer ${decryptedKey}`;
+      case 'apiKey': return `${auth.headerName}: ${decryptedKey}`;
       default: return '';
     }
   }
 
   private buildAIProxyConfig(provider: Provider): Record<string, unknown> {
+    const decryptedKey = this.cryptoService.decrypt(provider.encryptedApiKey);
     return {
       route_type: 'llm/v1/chat',
       auth: {
         param_name: 'key',
-        param_value: provider.encryptedApiKey,
+        param_value: decryptedKey,
         param_location: 'query',
       },
       model: {
-        provider: provider.aiProvider?.name ?? provider.serviceNameCached,
-        name: provider.aiProvider?.modelName ?? '',
+        provider: (provider as any).aiProvider?.name ?? provider.serviceNameCached,
+        name: (provider as any).aiProvider?.modelName ?? '',
       },
       logging: { log_statistics: true },
     };
