@@ -124,3 +124,24 @@ services:
     depends_on:
       kong:
         condition: service_healthy
+
+
+  limit-exceeded:
+    image: node:18-alpine
+    container_name: limit-exceeded
+    networks:
+      - kong-net
+    volumes:
+      - ./sentinel-core/bad-services/limit-exceeded.js:/app.js
+    command: node /app.js
+    restart: on-failure
+
+  provider-dead:
+    image: node:18-alpine
+    container_name: provider-dead
+    networks:
+      - kong-net
+    volumes:
+      - ./sentinel-core/bad-services/provider-dead.js:/app.js
+    command: node /app.js
+    restart: on-failure

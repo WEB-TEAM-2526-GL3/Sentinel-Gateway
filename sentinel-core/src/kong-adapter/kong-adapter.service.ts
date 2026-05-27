@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { KONG_ADMIN_URL } from './kong-adapter.constants';
+
 import type {
   KongService,
   KongRoute,
@@ -27,13 +28,8 @@ export class KongAdapterService {
   async init(): Promise<void> {
     this.logger.log('Initializing Kong adapter...');
     const existing = await this.listGlobalPlugins();
-    const hasKeyAuth = existing.some((p) => p.name === 'key-auth');
     const hasPrometheus = existing.some((p) => p.name === 'prometheus');
 
-    if (!hasKeyAuth) {
-      this.logger.log('Enabling key-auth plugin globally...');
-      await this.createPlugin({ name: 'key-auth', config: {} });
-    }
     if (!hasPrometheus) {
       this.logger.log('Enabling prometheus plugin globally...');
       await this.createPlugin({ name: 'prometheus', config: {} });
@@ -86,26 +82,18 @@ export class KongAdapterService {
 
   // ─── Bad Services (429 / 503) ──────────────────────────────────────
 
-  private async ensureBadServices(): Promise<void> {
-    const limitSvc = 'limit-exceeded-svc';
-    const deadSvc = 'provider-dead-svc';
+private async ensureBadServices(): Promise<void> {
+  const limitSvc = 'limit-exceeded-svc';
+  const deadSvc = 'provider-dead-svc';
 
-    try { await this.getService(limitSvc); } catch {
-      await this.createService(limitSvc, 'http://localhost');
-      await this.addPluginToService(limitSvc, {
-        name: 'request-termination',
-        config: { status_code: 429, message: 'Limit exceeded for this provider' },
-      });
-    }
-
-    try { await this.getService(deadSvc); } catch {
-      await this.createService(deadSvc, 'http://localhost');
-      await this.addPluginToService(deadSvc, {
-        name: 'request-termination',
-        config: { status_code: 503, message: 'Provider is currently unavailable' },
-      });
-    }
+  try { await this.getService(limitSvc); } catch {
+    await this.createService(limitSvc, 'http://limit-exceeded:9429');
   }
+
+  try { await this.getService(deadSvc); } catch {
+    await this.createService(deadSvc, 'http://provider-dead:9503');
+  }
+}
 
   // ─── Routes ───────────────────────────────────────────────────────
 
