@@ -15,10 +15,16 @@ import { FailoverRule } from './incidents/failover-rule.entity';
 import { RequestLimit } from './limits/request-limit.entity';
 import { TokenLimit } from './limits/token-limit.entity';
 
-// Existing modules (team's work — keep them)
+// Modules
 import { UsersModule } from './users/users.module';
 import { KongModule } from './kong/kong.module';
 import { KongAdapterModule } from './kong-adapter/kong-adapter.module';
+import { ProviderModule } from './providers/provider.module';
+import { ClientModule } from './clients/client.module';
+import { LinkModule } from './links/link.module';
+import { IncidentModule } from './incidents/incident.module';
+import { LimitModule } from './limits/limit.module';
+//import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -47,19 +53,20 @@ import { KongAdapterModule } from './kong-adapter/kong-adapter.module';
     // Event Emitter
     EventEmitterModule.forRoot(),
 
-    // Team modules (keep)
+    // Team modules
     UsersModule,
     KongModule,
     KongAdapterModule,
 
-    // Your modules (will add as we build)
-    // ProvidersModule,
-    // ClientsModule,
-    // LinksModule,
-    // MetricsModule,
-    // IncidentsModule,
-    // LimitsModule,
-    // DashboardModule,
+    // Domain modules
+    ProviderModule,
+    ClientModule,
+    LinkModule,
+    IncidentModule,
+    LimitModule,
+
+    // Metrics (Prometheus + MetricsService + Health + Limits)
+    //MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

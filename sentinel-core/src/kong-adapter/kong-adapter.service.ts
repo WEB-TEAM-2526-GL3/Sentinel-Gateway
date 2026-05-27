@@ -277,4 +277,50 @@ export class KongAdapterService {
       this.http.delete(`${this.baseUrl}/plugins/${pluginId}`),
     );
   }
+
+  // ── Route switching (for failover) ─────────────────────────────
+
+  /**
+   * Update a route to point to a different service.
+   * Used when switching primary provider or pointing to a bad service (429/503).
+   */
+  async updateRouteService(
+    routeIdOrName: string,
+    serviceIdOrName: string,
+  ): Promise<KongRoute> {
+    const { data } = await firstValueFrom(
+      this.http.patch<KongRoute>(`${this.baseUrl}/routes/${routeIdOrName}`, {
+        service: { id: serviceIdOrName },
+      }),
+    );
+    return data;
+  }
+
+  // ── Plugin management (extended) ───────────────────────────────
+
+  /**
+   * Get a single plugin by ID.
+   */
+  async getPlugin(pluginId: string): Promise<KongPlugin> {
+    const { data } = await firstValueFrom(
+      this.http.get<KongPlugin>(`${this.baseUrl}/plugins/${pluginId}`),
+    );
+    return data;
+  }
+
+  /**
+   * Update an existing plugin's config.
+   * Replaces the entire config object — make sure to send all fields.
+   */
+  async updatePlugin(
+    pluginId: string,
+    config: Record<string, unknown>,
+  ): Promise<KongPlugin> {
+    const { data } = await firstValueFrom(
+      this.http.patch<KongPlugin>(`${this.baseUrl}/plugins/${pluginId}`, {
+        config,
+      }),
+    );
+    return data;
+  }
 }
