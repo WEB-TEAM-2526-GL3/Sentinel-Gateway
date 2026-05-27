@@ -38,7 +38,7 @@ services:
 
   # Kong bootstrap (runs migrations once, then exits)
   kong-bootstrap:
-    image: kong:3.4
+    image: kong:3.9.1
     container_name: kong-bootstrap
     networks:
       - kong-net
@@ -52,7 +52,7 @@ services:
 
   # Main Kong instance (Control Plane + Proxy)
   kong:
-    image: kong:3.4
+    image: kong:3.9.1
     container_name: kong
     restart: on-failure
     networks:

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, In } from '@nestjs/typeorm';
 import { Client } from './client.entity';
 import { ClientRepository } from './client.repository';
 
