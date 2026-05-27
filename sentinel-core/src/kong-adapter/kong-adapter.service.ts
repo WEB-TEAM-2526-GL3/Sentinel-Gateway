@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { KONG_ADMIN_URL } from './kong-adapter.constants';
@@ -19,6 +19,10 @@ export class KongAdapterService {
   constructor(private readonly http: HttpService) {}
 
   // ─── Setup ────────────────────────────────────────────────────────
+
+  async onModuleInit() {
+    await this.init();
+  }
 
   async init(): Promise<void> {
     this.logger.log('Initializing Kong adapter...');
