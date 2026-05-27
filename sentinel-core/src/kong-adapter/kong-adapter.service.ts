@@ -34,6 +34,9 @@ export class KongAdapterService {
       this.logger.log('Enabling prometheus plugin globally...');
       await this.createPlugin({ name: 'prometheus', config: {} });
     }
+
+    await this.ensureBadServices();
+
     this.logger.log('Kong adapter initialized');
   }
 
@@ -68,6 +71,36 @@ export class KongAdapterService {
     await firstValueFrom(
       this.http.patch(`${this.baseUrl}/services/${name}`, { url: newUrl }),
     );
+  }
+
+  async listServicePlugins(serviceName: string): Promise<KongPlugin[]> {
+    const { data } = await firstValueFrom(
+      this.http.get<{ data: KongPlugin[] }>(`${this.baseUrl}/services/${serviceName}/plugins`),
+    );
+    return data.data;
+  }
+
+  // ─── Bad Services (429 / 503) ──────────────────────────────────────
+
+  private async ensureBadServices(): Promise<void> {
+    const limitSvc = 'limit-exceeded-svc';
+    const deadSvc = 'provider-dead-svc';
+
+    try { await this.getService(limitSvc); } catch {
+      await this.createService(limitSvc, 'http://localhost');
+      await this.addPluginToService(limitSvc, {
+        name: 'request-termination',
+        config: { status_code: 429, message: 'Limit exceeded for this provider' },
+      });
+    }
+
+    try { await this.getService(deadSvc); } catch {
+      await this.createService(deadSvc, 'http://localhost');
+      await this.addPluginToService(deadSvc, {
+        name: 'request-termination',
+        config: { status_code: 503, message: 'Provider is currently unavailable' },
+      });
+    }
   }
 
   // ─── Routes ───────────────────────────────────────────────────────

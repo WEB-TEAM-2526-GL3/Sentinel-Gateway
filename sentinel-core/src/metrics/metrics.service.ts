@@ -38,7 +38,7 @@ export class MetricsService {
   }
 
   private async pollAll(): Promise<void> {
-    const filters = this.buildActiveFilters();
+    const filters = await this.buildActiveFilters();
     for (const filter of filters) {
       try {
         const metrics = await this.prometheus.queryMetrics(filter, '5m');

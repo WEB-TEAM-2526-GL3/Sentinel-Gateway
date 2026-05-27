@@ -4,6 +4,8 @@ import { ProviderRepository } from './provider.repository';
 import { KongAdapterService } from '../kong-adapter/kong-adapter.service';
 import { LinkRepository } from '../links/link.repository';
 import { Provider } from './provider.entity';
+import { UpdateProviderDto } from './dto/update-provider.dto';
+import { KongPlugin } from '../kong-adapter/kong-adapter.types';
 
 @Injectable()
 export class ProviderService {
@@ -87,7 +89,7 @@ export class ProviderService {
       try {
         if (provider.kind === 'llm') {
           const plugins = await this.kongAdapter.listServicePlugins(link.kongServiceName!);
-          const aiProxy = plugins.find(p => p.name === 'ai-proxy');
+          const aiProxy = plugins.find((p: KongPlugin) => p.name === 'ai-proxy');
           if (aiProxy) {
             await this.kongAdapter.updatePlugin(aiProxy.id, {
               auth: { header_name: 'Authorization', header_value: `Bearer ${newEncryptedKey}` },
@@ -95,7 +97,7 @@ export class ProviderService {
           }
         } else {
           const plugins = await this.kongAdapter.listServicePlugins(link.kongServiceName!);
-          const transformer = plugins.find(p => p.name === 'request-transformer');
+          const transformer = plugins.find((p: KongPlugin) => p.name === 'request-transformer');
           if (transformer) {
             const newHeader = this.buildAuthHeader(provider, newEncryptedKey);
             await this.kongAdapter.updatePlugin(transformer.id, { add: { headers: [newHeader] } });

@@ -55,7 +55,7 @@ export class ProviderRepository {
     const generic = this.genericRepo.create({ provider: saved, providerId: saved.id, name: data.name });
     await this.genericRepo.save(generic);
 
-    return this.findById(saved.id)!;
+    return (await this.findById(saved.id)!) as Provider;
   }
 
   async createAI(data: {
@@ -82,7 +82,7 @@ export class ProviderRepository {
     const ai = this.aiRepo.create({ provider: saved, providerId: saved.id, name: data.name, modelName: data.modelName });
     await this.aiRepo.save(ai);
 
-    return this.findById(saved.id)!;
+    return (await this.findById(saved.id)!) as Provider;
   }
 
   // ── Updates (scoped) ─────────────────────────────────────────────
@@ -92,7 +92,7 @@ export class ProviderRepository {
     changes: Partial<Pick<Provider, 'baseUrl' | 'isArchived' | 'authMethod' | 'authHeaderName' | 'authParamName' | 'encryptedApiKey'>>,
   ): Promise<Provider> {
     await this.baseRepo.update(id, changes);
-    return this.findById(id)!;
+    return (await this.findById(id)!) as Provider;
   }
 
   async updateGenericName(id: string, newName: string): Promise<Provider> {
@@ -101,7 +101,7 @@ export class ProviderRepository {
     await this.genericRepo.update({ providerId: id }, { name: newName });
     const newSvc = this.sanitize(newName);
     await this.baseRepo.update(id, { serviceNameCached: newSvc });
-    return this.findById(id)!;
+    return (await this.findById(id)!) as Provider;
   }
 
   async updateAIModelName(id: string, newModelName: string): Promise<Provider> {
@@ -110,7 +110,7 @@ export class ProviderRepository {
     await this.aiRepo.update({ providerId: id }, { modelName: newModelName });
     const newSvc = this.sanitize(`${p.aiProvider!.name}-${newModelName}`);
     await this.baseRepo.update(id, { serviceNameCached: newSvc });
-    return this.findById(id)!;
+    return (await this.findById(id)!) as Provider;
   }
 
   // ── Archive ──────────────────────────────────────────────────────

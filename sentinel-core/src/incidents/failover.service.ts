@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FailoverRuleRepository } from './failover-rule.repository';
-
+import { FailoverRule } from './failover-rule.entity';
+import { SetFailoverRuleDto } from './dto/set-failover-rule.dto';
 @Injectable()
 export class FailoverService {
   constructor(private readonly failoverRepo: FailoverRuleRepository) {}

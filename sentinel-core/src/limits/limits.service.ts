@@ -2,6 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RequestLimitRepository } from '../limits/request-limit.repository';
 import { TokenLimitRepository } from '../limits/token-limit.repository';
+import { RequestLimit } from './request-limit.entity';
+import { TokenLimit } from './token-limit.entity';
+import { SetRequestLimitDto } from './dto/set-request-limit.dto';
+import { SetTokenLimitDto } from './dto/set-token-limit.dto';
+
 
 @Injectable()
 export class LimitsService {

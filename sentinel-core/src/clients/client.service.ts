@@ -3,6 +3,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ClientRepository } from './client.repository';
 import { LinkRepository } from '../links/link.repository';
 import { Client } from './client.entity';
+import { UpdateClientDto } from './dto/update-client.dto';
+import { CreateClientDto } from './dto/create-client.dto';
 
 @Injectable()
 export class ClientService {
@@ -12,8 +14,12 @@ export class ClientService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createClient(dto: { name: string; team: string }): Promise<Client> {
-    const client = this.clientRepo.create({ ...dto, status: 'active', primaryLinkId: null });
+  async createClient(dto: CreateClientDto): Promise<Client> {
+    const client = new Client();
+    client.name = dto.name;
+    client.team = dto.team;
+    client.status = 'active';
+    client.primaryLinkId = null;
     return this.clientRepo.save(client);
   }
 

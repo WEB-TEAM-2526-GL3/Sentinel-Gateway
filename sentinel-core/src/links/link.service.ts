@@ -205,7 +205,7 @@ export class LinkService {
 
     await this.linkRepo.archive(linkId);
     try {
-      await this.kongAdapter.deleteRoute(link.kongServiceName!, link.kongRouteName!);
+      await this.kongAdapter.deleteRoute(link.kongRouteName!);
     } catch (err) {
       this.logger.error(`Failed to delete Kong route: ${err.message}`);
     }
