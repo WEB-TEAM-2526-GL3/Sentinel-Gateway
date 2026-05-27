@@ -9,7 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { IncidentSeverity } from '../../incidents/enums/incident-severity.enum';
+import { IncidentSeverity } from '../enums/incident-severity.enum';
 import { MonitoringRuleType } from '../entities/monitoring-rule.entity';
 
 export class CreateMonitoringRuleDto {

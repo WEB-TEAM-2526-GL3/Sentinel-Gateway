@@ -7,25 +7,34 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Repository } from 'typeorm';
-import { randomUUID } from 'node:crypto';
-import { IncidentSeverity } from '../incidents/enums/incident-severity.enum';
-import { IncidentStatus } from '../incidents/enums/incident-status.enum';
-import { IncidentEntity } from '../incidents/entities/incident.entity';
-import { IncidentLogEntity } from '../incidents/entities/incident-log.entity';
 import { CreateMonitoringRuleDto } from './dto/create-monitoring-rule.dto';
 import { UpdateMonitoringRuleDto } from './dto/update-monitoring-rule.dto';
 import {
   MonitoringRuleEntity,
   MonitoringRuleType,
 } from './entities/monitoring-rule.entity';
+import { IncidentSeverity } from './enums/incident-severity.enum';
+import {
+  THRESHOLD_EXCEEDED_EVENT,
+  ThresholdExceededEvent,
+} from './events/threshold-exceeded.event';
 import type {
   CheckResult,
   MonitoringStatusReport,
 } from './interfaces/check-result.interface';
 
+/**
+ * Monitoring Controller — Bilel's bounded context.
+ *
+ * Owns rule storage + the scheduled detection loop. When a rule fires,
+ * it emits a `monitoring.threshold.exceeded` event. The Incident Service
+ * (owned by another teammate) is the sole consumer that decides what
+ * to do with the signal. This module never touches incident tables.
+ */
 @Injectable()
 export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MonitoringService.name);
@@ -38,11 +47,8 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(MonitoringRuleEntity)
     private readonly rulesRepo: Repository<MonitoringRuleEntity>,
-    @InjectRepository(IncidentEntity)
-    private readonly incidentsRepo: Repository<IncidentEntity>,
-    @InjectRepository(IncidentLogEntity)
-    private readonly logsRepo: Repository<IncidentLogEntity>,
     private readonly httpService: HttpService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   onModuleInit() {
@@ -135,7 +141,9 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
           results.push(result);
           if (result.triggered) await this.handleTriggeredRule(rule, result);
         } catch (err) {
-          this.logger.warn('Rule "' + rule.name + '" evaluation failed: ' + err);
+          this.logger.warn(
+            'Rule "' + rule.name + '" evaluation failed: ' + err,
+          );
         }
       }),
     );
@@ -150,7 +158,11 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
 
     this.lastReport = report;
     this.logger.debug(
-      'Check complete — ' + report.triggeredRules + '/' + report.totalRules + ' triggered',
+      'Check complete — ' +
+        report.triggeredRules +
+        '/' +
+        report.totalRules +
+        ' triggered',
     );
     return report;
   }
@@ -196,8 +208,13 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
       currentValue,
       threshold,
       reason: triggered
-        ? 'Error rate ' + (currentValue * 100).toFixed(1) + '% exceeds threshold ' +
-          (threshold * 100).toFixed(1) + '% on "' + svc + '"'
+        ? 'Error rate ' +
+          (currentValue * 100).toFixed(1) +
+          '% exceeds threshold ' +
+          (threshold * 100).toFixed(1) +
+          '% on "' +
+          svc +
+          '"'
         : undefined,
     };
   }
@@ -211,7 +228,10 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     const win = rule.metricWindow;
     const query =
       'histogram_quantile(0.95, sum(rate(kong_upstream_latency_ms_bucket{service="' +
-      svc + '"}[' + win + '])) by (le))';
+      svc +
+      '"}[' +
+      win +
+      '])) by (le))';
     const currentValue = await this.queryPrometheus(query);
     const triggered = currentValue > threshold;
     return {
@@ -220,7 +240,13 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
       currentValue,
       threshold,
       reason: triggered
-        ? 'P95 latency ' + currentValue.toFixed(0) + 'ms exceeds threshold ' + threshold + 'ms on "' + svc + '"'
+        ? 'P95 latency ' +
+          currentValue.toFixed(0) +
+          'ms exceeds threshold ' +
+          threshold +
+          'ms on "' +
+          svc +
+          '"'
         : undefined,
     };
   }
@@ -229,7 +255,8 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     rule: MonitoringRuleEntity,
     base: Omit<CheckResult, 'triggered' | 'currentValue' | 'threshold' | 'reason'>,
   ): Promise<CheckResult> {
-    const query = 'min(kong_upstream_target_health{upstream="' + rule.serviceName + '"})';
+    const query =
+      'min(kong_upstream_target_health{upstream="' + rule.serviceName + '"})';
     const currentValue = await this.queryPrometheus(query);
     const triggered = currentValue === 0;
     return {
@@ -243,59 +270,50 @@ export class MonitoringService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  // ─── Incident creation ────────────────────────────────────────────
+  // ─── Cooldown + event emission ────────────────────────────────────
 
   private async handleTriggeredRule(
     rule: MonitoringRuleEntity,
     result: CheckResult,
   ): Promise<void> {
     if (!this.isCooldownExpired(rule)) {
-      this.logger.debug('Rule "' + rule.name + '" is in cooldown — skipping');
+      this.logger.debug(
+        'Rule "' + rule.name + '" is in cooldown — skipping event',
+      );
       return;
     }
-    await this.createIncident(rule, result.reason ?? 'Rule "' + rule.name + '" triggered');
+
+    const event = new ThresholdExceededEvent(
+      rule.id,
+      rule.name,
+      rule.serviceName,
+      rule.providerId,
+      rule.type,
+      rule.severity,
+      result.currentValue,
+      result.threshold,
+      result.reason ?? 'Rule "' + rule.name + '" triggered',
+      result.checkedAt,
+    );
+
+    this.eventEmitter.emit(THRESHOLD_EXCEEDED_EVENT, event);
+
     rule.lastTriggeredAt = new Date();
     await this.rulesRepo.save(rule);
-    this.logger.warn('Incident auto-created by rule "' + rule.name + '"');
+
+    this.logger.warn(
+      'Threshold exceeded — emitted ' +
+        THRESHOLD_EXCEEDED_EVENT +
+        ' for rule "' +
+        rule.name +
+        '"',
+    );
   }
 
   private isCooldownExpired(rule: MonitoringRuleEntity): boolean {
     if (!rule.lastTriggeredAt) return true;
     const cooldownMs = rule.cooldownMinutes * 60 * 1000;
     return Date.now() - rule.lastTriggeredAt.getTime() > cooldownMs;
-  }
-
-  private async createIncident(
-    rule: MonitoringRuleEntity,
-    reason: string,
-  ): Promise<IncidentEntity> {
-    const id = randomUUID();
-    const dummyUuid = randomUUID();
-    const incident = this.incidentsRepo.create({
-      id,
-      serviceId: rule.providerId ?? dummyUuid,
-      providerId: rule.providerId ?? dummyUuid,
-      severity: rule.severity,
-      reason,
-      status: IncidentStatus.OPEN,
-      fallbackProviderId: null,
-      resolvedAt: null,
-    });
-    const saved = await this.incidentsRepo.save(incident);
-    await this.logsRepo.save(
-      this.logsRepo.create({
-        incidentId: saved.id,
-        incident: saved,
-        adminId: null,
-        action: 'CREATED',
-        details: {
-          triggeredByRule: rule.name,
-          ruleType: rule.type,
-          serviceName: rule.serviceName,
-        },
-      }),
-    );
-    return saved;
   }
 
   // ─── Prometheus helper ────────────────────────────────────────────

@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { IncidentSeverity } from '../../incidents/enums/incident-severity.enum';
+import { IncidentSeverity } from '../enums/incident-severity.enum';
 
 export enum MonitoringRuleType {
   ERROR_RATE = 'ERROR_RATE',

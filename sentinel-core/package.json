@@ -42,7 +42,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.30",
-    "@nestjs/mapped-types": "^2.1.0"
+    "@nestjs/event-emitter": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
