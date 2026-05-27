@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { KONG_ADMIN_URL } from './kong-adapter.constants';
+import type { ActivateFallbackInput } from '../interfaces/kong-adapter.interface';
 import type {
   KongService,
   KongRoute,
@@ -68,6 +69,13 @@ export class KongAdapterService {
     await firstValueFrom(
       this.http.patch(`${this.baseUrl}/services/${name}`, { url: newUrl }),
     );
+  }
+
+  async activateFallback(input: ActivateFallbackInput): Promise<void> {
+    this.logger.log(
+      `Activating fallback for ${input.serviceName} to provider ${input.fallbackProviderId}`,
+    );
+    await this.updateServiceUrl(input.serviceName, input.fallbackUrl);
   }
 
   // ─── Routes ───────────────────────────────────────────────────────

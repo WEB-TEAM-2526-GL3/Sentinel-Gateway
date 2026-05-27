@@ -25,3 +25,4 @@ Thumbs.db
 tmp/
 
 test_sentinel_app.http
+package-lock.json
