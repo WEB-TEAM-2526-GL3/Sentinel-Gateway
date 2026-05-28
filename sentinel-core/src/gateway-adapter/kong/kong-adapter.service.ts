@@ -190,6 +190,16 @@ export class KongAdapterService {
     );
     return data;
   }
+  // Temporary
+  async activateFallback(options: {
+    serviceName: string;
+    fallbackUrl: string;
+    fallbackProviderId: string;
+  }): Promise<void> {
+    // Minimal implementation: update the service URL to point to the fallback.
+    // Higher-level orchestration (routes, plugins) can be added later.
+    await this.updateServiceUrl(options.serviceName, options.fallbackUrl);
+  }
 
   // ─── Internal ─────────────────────────────────────────────────────
 

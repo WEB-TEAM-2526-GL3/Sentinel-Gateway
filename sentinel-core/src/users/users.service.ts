@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { UserStatus } from './domain/user-status.enum';
+import { UserStatus } from './enum/user-status.enum';
 import { CreateAdminUserInput } from './dto/create-admin-user.input';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserRole } from './domain/user-role.enum';
+import { UserRole } from './enum/user-role.enum';
 import { Repository } from 'typeorm';
 import { GenericService } from '../common/generic.service';
 
@@ -23,7 +23,9 @@ export class UsersService extends GenericService<UserEntity, string> {
     });
 
     if (existingUser) {
-      throw new Error(input.email.trim().toLowerCase() + ' is already in use');
+      throw new ConflictException(
+        input.email.trim().toLowerCase() + ' is already in use',
+      );
     }
 
     const user = this.genericRepository.create({

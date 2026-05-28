@@ -1,13 +1,9 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { UsersService } from '../users/users.service';
-import { UserStatus } from '../users/domain/user-status.enum';
+import { UserStatus } from '../users/enum/user-status.enum';
 
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -26,23 +22,15 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     this.ceoSecretService.validateOrThrow(registerDto.ceoSecret);
 
-    try {
-      const passwordHash = await bcrypt.hash(registerDto.password, 10);
+    const passwordHash = await bcrypt.hash(registerDto.password, 10);
 
-      const user = await this.usersService.createAdminUser({
-        email: registerDto.email,
-        fullName: registerDto.fullName,
-        passwordHash,
-      });
+    const user = await this.usersService.createAdminUser({
+      email: registerDto.email,
+      fullName: registerDto.fullName,
+      passwordHash,
+    });
 
-      return this.buildAuthResponse(user);
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new ConflictException(error.message);
-      }
-
-      throw error;
-    }
+    return this.buildAuthResponse(user);
   }
 
   async login(loginDto: LoginDto) {

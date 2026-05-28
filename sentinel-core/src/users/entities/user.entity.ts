@@ -5,8 +5,8 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserRole } from '../domain/user-role.enum';
-import { UserStatus } from '../domain/user-status.enum';
+import { UserRole } from '../enum/user-role.enum';
+import { UserStatus } from '../enum/user-status.enum';
 
 @Entity('users')
 export class UserEntity {

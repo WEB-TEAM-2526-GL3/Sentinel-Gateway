@@ -25,3 +25,5 @@ Thumbs.db
 tmp/
 
 test_sentinel_app.http
+
+sentinel-core/public/incident-room/

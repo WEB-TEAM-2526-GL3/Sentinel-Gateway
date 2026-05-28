@@ -10,7 +10,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.useStaticAssets(join(process.cwd(), 'public'));
-
+  app.enableCors({
+    origin: process.env.SENTINEL_CORS_ORIGIN ?? 'http://localhost:5173',
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
