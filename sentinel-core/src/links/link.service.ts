@@ -12,6 +12,11 @@ import { KongAdapterService } from '../kong-adapter/kong-adapter.service';
 import { ClientProviderLink } from './link.entity';
 import { Provider } from '../providers/provider.entity';
 import { CryptoService } from '../common/crypto.service';
+import { sanitizeKongName } from '../common/sanitize';
+import {
+  buildAIProxyConfig,
+  buildAuthHeader,
+} from '../providers/provider-plugin-config';
 
 @Injectable()
 export class LinkService {
@@ -47,10 +52,8 @@ export class LinkService {
     }
 
     // Derive Kong names
-    const kongServiceName = provider.serviceNameCached;
-    const kongRouteName = `${client.name}-${provider.serviceNameCached}-route`
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, '-');
+    const kongServiceName = provider.kongServiceName;
+    const kongRouteName = sanitizeKongName(client.name) + '-rt';
 
     // 1. Write to DB
     const link = await this.linkRepo.save({
@@ -78,17 +81,18 @@ export class LinkService {
 
       // 4. Apply auth plugin
       if (provider.kind === 'llm') {
-        // AI Proxy plugin
-        await this.kongAdapter.addPluginToService(kongServiceName, {
-          name: 'ai-proxy',
-          config: this.buildAIProxyConfig(provider),
-        });
-      } else {
-        // Request transformer plugin for generic providers
-        const authHeader = this.buildAuthHeader(
-          provider,
+        const decryptedKey = this.cryptoService.decrypt(
           provider.encryptedApiKey,
         );
+        await this.kongAdapter.addPluginToService(kongServiceName, {
+          name: 'ai-proxy',
+          config: buildAIProxyConfig(provider, decryptedKey),
+        });
+      } else {
+        const decryptedKey = this.cryptoService.decrypt(
+          provider.encryptedApiKey,
+        );
+        const authHeader = buildAuthHeader(provider, decryptedKey);
         await this.kongAdapter.addPluginToService(kongServiceName, {
           name: 'request-transformer',
           config: { add: { headers: [authHeader] } },
@@ -323,39 +327,6 @@ export class LinkService {
           : client.status === 'limit'
             ? 'limit'
             : undefined,
-    };
-  }
-
-  // ─── Helpers ──────────────────────────────────────────────────────
-
-  private buildAuthHeader(provider: Provider, encryptedKey: string): string {
-    const decryptedKey = this.cryptoService.decrypt(encryptedKey);
-    const auth = provider.auth;
-    switch (auth.method) {
-      case 'bearer':
-        return `Authorization: Bearer ${decryptedKey}`;
-      case 'apiKey':
-        return `${auth.headerName}: ${decryptedKey}`;
-      default:
-        return '';
-    }
-  }
-
-  private buildAIProxyConfig(provider: Provider): Record<string, unknown> {
-    const decryptedKey = this.cryptoService.decrypt(provider.encryptedApiKey);
-    return {
-      route_type: 'llm/v1/chat',
-      auth: {
-        param_name: 'key',
-        param_value: decryptedKey,
-        param_location: 'query',
-      },
-      model: {
-        provider:
-          (provider as any).aiProvider?.name ?? provider.serviceNameCached,
-        name: (provider as any).aiProvider?.modelName ?? '',
-      },
-      logging: { log_statistics: true },
     };
   }
 }

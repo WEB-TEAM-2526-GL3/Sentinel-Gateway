@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   OneToOne,
 } from 'typeorm';
-import { GenericProvider } from './generic-provider.entity';
 import { AIProvider } from './ai-provider.entity';
 
 export type ProviderKind = 'llm' | 'generic';
@@ -24,8 +23,11 @@ export class Provider {
   @Column({ type: 'varchar', length: 20 })
   kind: ProviderKind;
 
-  @Column({ name: 'service_name_cached', type: 'text', unique: true })
-  serviceNameCached: string;
+  @Column({ name: 'kong_service_name', type: 'text', unique: true })
+  kongServiceName: string;
+
+  @Column({ name: 'display_name', type: 'text' })
+  displayName: string;
 
   @Column({ name: 'base_url', type: 'text' })
   baseUrl: string;
@@ -51,13 +53,9 @@ export class Provider {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @OneToOne(() => GenericProvider, (gp) => gp.provider, { cascade: true })
-  genericProvider: GenericProvider;
-
   @OneToOne(() => AIProvider, (ai) => ai.provider, { cascade: true })
   aiProvider: AIProvider;
 
-  // ─── Helper to get auth as a structured object ──────────────
   get auth(): ProviderAuth {
     switch (this.authMethod) {
       case 'bearer':

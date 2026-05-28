@@ -1,5 +1,6 @@
 export class UpdateProviderDto {
-  name?: string;
-  modelName?: string;
-  baseUrl?: string;
+  displayName?: string; // updatable for all providers
+  baseUrl?: string; // updatable for all providers
+  aiProviderName?: string; // updatable for AI providers
+  aiModelName?: string; // updatable for AI providers
 }

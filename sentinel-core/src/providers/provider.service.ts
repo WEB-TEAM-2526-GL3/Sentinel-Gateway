@@ -9,10 +9,13 @@ import { ProviderRepository } from './provider.repository';
 import { KongAdapterService } from '../kong-adapter/kong-adapter.service';
 import { LinkRepository } from '../links/link.repository';
 import { Provider } from './provider.entity';
+import { CreateGenericProviderDto } from './dto/create-generic-provider.dto';
+import { CreateAIProviderDto } from './dto/create-ai-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { KongPlugin } from '../kong-adapter/kong-adapter.types';
 import { RotateSecretDto } from './dto/rotate-secret.dto';
 import { CryptoService } from '../common/crypto.service';
+import { buildAIProxyConfig, buildAuthHeader } from './provider-plugin-config';
 
 @Injectable()
 export class ProviderService {
@@ -26,20 +29,15 @@ export class ProviderService {
     private readonly cryptoService: CryptoService,
   ) {}
 
-  // ─── Registration ─────────────────────────────────────────────────
+  // ─── Registration ──────────────────────────────────────────────
 
-  async registerGenericProvider(dto: {
-    name: string;
-    baseUrl: string;
-    authMethod: 'bearer' | 'apiKey' | 'query';
-    authHeaderName?: string;
-    authParamName?: string;
-    encryptedApiKey: string;
-  }): Promise<Provider> {
+  async registerGenericProvider(
+    dto: CreateGenericProviderDto,
+  ): Promise<Provider> {
     const provider = await this.providerRepo.createGeneric(dto);
     try {
       await this.kongAdapter.createService(
-        provider.serviceNameCached,
+        provider.kongServiceName,
         provider.baseUrl,
       );
     } catch (err) {
@@ -49,19 +47,11 @@ export class ProviderService {
     return provider;
   }
 
-  async registerAIProvider(dto: {
-    name: string;
-    modelName: string;
-    baseUrl: string;
-    authMethod: 'bearer' | 'apiKey' | 'query';
-    authHeaderName?: string;
-    authParamName?: string;
-    encryptedApiKey: string;
-  }): Promise<Provider> {
+  async registerAIProvider(dto: CreateAIProviderDto): Promise<Provider> {
     const provider = await this.providerRepo.createAI(dto);
     try {
       await this.kongAdapter.createService(
-        provider.serviceNameCached,
+        provider.kongServiceName,
         provider.baseUrl,
       );
     } catch (err) {
@@ -86,10 +76,10 @@ export class ProviderService {
 
     await this.providerRepo.archive(id);
     try {
-      await this.kongAdapter.deleteService(provider.serviceNameCached);
+      await this.kongAdapter.deleteService(provider.kongServiceName);
     } catch (err) {
       this.logger.error(
-        `Failed to delete Kong service ${provider.serviceNameCached}: ${err.message}`,
+        `Failed to delete Kong service ${provider.kongServiceName}: ${err.message}`,
       );
     }
     this.eventEmitter.emit('provider.archived', { providerId: id });
@@ -101,73 +91,14 @@ export class ProviderService {
     const provider = await this.providerRepo.findById(providerId);
     if (!provider) throw new NotFoundException('Provider not found');
 
-    // Encrypt the plaintext key for storage
     const encryptedKey = this.cryptoService.encrypt(dto.apiKey);
-    await this.providerRepo.updateBase(providerId, {
-      encryptedApiKey: encryptedKey,
-    });
+    await this.providerRepo.updateEncryptedKey(providerId, encryptedKey);
 
-    // Update Kong plugins with the plaintext key (Kong needs the real key)
-    const links = await this.linkRepo.findByProvider(providerId);
-    for (const link of links) {
-      try {
-        if (provider.kind === 'llm') {
-          const plugins = await this.kongAdapter.listServicePlugins(
-            link.kongServiceName!,
-          );
-          const aiProxy = plugins.find(
-            (p: KongPlugin) => p.name === 'ai-proxy',
-          );
-          if (aiProxy) {
-            await this.kongAdapter.updatePlugin(aiProxy.id, {
-              auth: {
-                param_name: 'key',
-                param_value: dto.apiKey,
-                param_location: 'query',
-              },
-              model: {
-                provider: (provider as any).aiProvider?.name,
-                name: (provider as any).aiProvider?.modelName,
-              },
-            });
-          }
-        } else {
-          const plugins = await this.kongAdapter.listServicePlugins(
-            link.kongServiceName!,
-          );
-          const transformer = plugins.find(
-            (p: KongPlugin) => p.name === 'request-transformer',
-          );
-          if (transformer) {
-            const newHeader = this.buildAuthHeader(provider, dto.apiKey);
-            await this.kongAdapter.updatePlugin(transformer.id, {
-              add: { headers: [newHeader] },
-            });
-          }
-        }
-      } catch (err) {
-        this.logger.error(
-          `Failed to rotate secret for link ${link.id}: ${err.message}`,
-        );
-      }
-    }
-
+    await this.updateProviderPlugin(provider, { authKey: dto.apiKey });
     this.eventEmitter.emit('provider.secretRotated', { providerId });
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────
-
-  private buildAuthHeader(provider: Provider, encryptedKey: string): string {
-    const auth = provider.auth;
-    switch (auth.method) {
-      case 'bearer':
-        return `${auth.headerName}: Bearer ${encryptedKey}`;
-      case 'apiKey':
-        return `${auth.headerName}: ${encryptedKey}`;
-      default:
-        return '';
-    }
-  }
 
   async listProviders(): Promise<Provider[]> {
     return this.providerRepo.findAllActive();
@@ -179,21 +110,76 @@ export class ProviderService {
     return provider;
   }
 
+  private async updateProviderPlugin(
+    provider: Provider,
+    overrides?: {
+      authKey?: string;
+      aiProviderName?: string;
+      aiModelName?: string;
+    },
+  ): Promise<void> {
+    const plugins = await this.kongAdapter.listServicePlugins(
+      provider.kongServiceName,
+    );
+    const decryptedKey =
+      overrides?.authKey ??
+      this.cryptoService.decrypt(provider.encryptedApiKey);
+
+    if (provider.kind === 'llm') {
+      const aiProxy = plugins.find((p: KongPlugin) => p.name === 'ai-proxy');
+      if (aiProxy) {
+        const config = buildAIProxyConfig(provider, decryptedKey) as any;
+        if (overrides?.aiProviderName)
+          config.model.provider = overrides.aiProviderName;
+        if (overrides?.aiModelName) config.model.name = overrides.aiModelName;
+        await this.kongAdapter.updatePlugin(aiProxy.id, config);
+      }
+    } else {
+      const transformer = plugins.find(
+        (p: KongPlugin) => p.name === 'request-transformer',
+      );
+      if (transformer) {
+        const header = buildAuthHeader(provider, decryptedKey);
+        await this.kongAdapter.updatePlugin(transformer.id, {
+          add: { headers: [header] },
+        });
+      }
+    }
+  }
+
+  // ─── Update ────────────────────────────────────────────────────
+
   async updateProvider(id: string, dto: UpdateProviderDto): Promise<Provider> {
     const provider = await this.providerRepo.findById(id);
     if (!provider) throw new NotFoundException('Provider not found');
 
-    if (dto.name && provider.kind === 'generic') {
-      await this.providerRepo.updateGenericName(id, dto.name);
+    // Update display name (all providers)
+    if (dto.displayName !== undefined) {
+      await this.providerRepo.updateBase(id, { displayName: dto.displayName });
     }
-    if (dto.modelName && provider.kind === 'llm') {
-      await this.providerRepo.updateAIModelName(id, dto.modelName);
+
+    // Update AI-specific fields + patch plugins
+    if (
+      provider.kind === 'llm' &&
+      (dto.aiProviderName !== undefined || dto.aiModelName !== undefined)
+    ) {
+      const newProviderName =
+        dto.aiProviderName ?? provider.aiProvider!.aiProviderName;
+      const newModelName = dto.aiModelName ?? provider.aiProvider!.aiModelName;
+      await this.providerRepo.updateAIModel(id, newProviderName, newModelName);
+
+      await this.updateProviderPlugin(provider, {
+        aiProviderName: newProviderName,
+        aiModelName: newModelName,
+      });
     }
+
+    // Update base URL (all providers)
     if (dto.baseUrl) {
       await this.providerRepo.updateBase(id, { baseUrl: dto.baseUrl });
       try {
         await this.kongAdapter.updateServiceUrl(
-          provider.serviceNameCached,
+          provider.kongServiceName,
           dto.baseUrl,
         );
       } catch (err) {

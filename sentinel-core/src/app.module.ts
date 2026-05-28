@@ -6,7 +6,6 @@ import { AppService } from './app.service';
 
 // Entities
 import { Provider } from './providers/provider.entity';
-import { GenericProvider } from './providers/generic-provider.entity';
 import { AIProvider } from './providers/ai-provider.entity';
 import { Client } from './clients/client.entity';
 import { ClientProviderLink } from './links/link.entity';
@@ -38,7 +37,6 @@ import { MetricsModule } from './metrics/metrics.module';
       database: process.env.DB_DATABASE || 'sentinel_gateway',
       entities: [
         Provider,
-        GenericProvider,
         AIProvider,
         Client,
         ClientProviderLink,

@@ -1,5 +1,6 @@
 export class CreateGenericProviderDto {
-  name: string;
+  kongServiceName: string; // immutable Kong Service identifier
+  displayName: string; // human-readable label
   baseUrl: string;
   authMethod: 'bearer' | 'apiKey' | 'query';
   authHeaderName?: string;

@@ -5,6 +5,8 @@
 
 ---
 
+---
+
 ## 1. Project Context
 
 ### 1.1 What We Set Out to Build
@@ -55,11 +57,11 @@ To avoid confusion, we use **Sentinel‑specific terms** that map to Kong entiti
 
 | Sentinel Term | Meaning | Kong Entity | Example |
 |---------------|---------|-------------|---------|
-| **Provider** | A third‑party API (OpenAI, Gemini, Stripe) | Kong Service + Plugin(s) | Provider `openai-gpt4o` → Kong Service named `openai-gpt4o-svc` |
+| **Provider** | A third‑party API (OpenAI, Gemini, Stripe) | Kong Service + Plugin(s) | Provider `openai-gpt4o` → Kong Service named `openai-svc` |
 | **Client** | An internal consumer of Providers (e.g., ChatService) | No direct Kong entity — represented by a Route | Client `chat-service` → Kong Route `/{sanitised-client-name}` |
-| **Client‑Provider Link** | A specific pairing of a Client with a Provider, with a role (primary/fallback) | Kong Route (the Route points to the Provider's Kong Service) | Link (ChatService → OpenAI) → Route `/chat-service` on Service `openai-gpt4o-svc` |
-| **Primary link** | The currently active link for a Client | The Kong Route's `service.id` | Route points to `openai-gpt4o-svc` |
-| **Secondary link** | An alternative link eligible for failover | Another Kong Service + Route (pre‑created but not routed to) | Service `gemini-pro-svc`, Route `/chat-service` (on standby) |
+| **Client‑Provider Link** | A specific pairing of a Client with a Provider, with a role (primary/fallback) | Kong Route (the Route points to the Provider's Kong Service) | Link (ChatService → OpenAI) → Route `/chat-service` on Service `openai-svc` |
+| **Primary link** | The currently active link for a Client | The Kong Route's `service.id` | Route points to `openai-svc` |
+| **Secondary link** | An alternative link eligible for failover | Another Kong Service + Route (pre‑created but not routed to) | Service `gemini-svc`, Route `/chat-service` (on standby) |
 | **Bad service** | A special Kong Service that always returns an error (429 or 503) | Kong Service pointing to a Docker container that returns the error | `limit-exceeded-svc` → container `limit-exceeded:9429` returns 429, `provider-dead-svc` → container `provider-dead:9503` returns 503 |
 **Kong Consumers are not used** in our MVP. Auth is handled by the Sentinel backend (JWT). The "who is calling" question is answered by which Client owns the Route.
 
@@ -101,25 +103,21 @@ Plugin configuration via Kong Admin API is **all‑or‑nothing**: `PATCH /plugi
 ## 4. Design Decisions & Compromises (Authoritative)
 
 ### 4.1 Provider = Kong Service (1:1)
-Each Provider entity maps to exactly one Kong Service. Service name = `{sanitised-provider-name}` for generic, `{sanitised-name}-{sanitised-model}` for AI. This is non‑negotiable because:
-- It gives us clean Prometheus labels (`service="openai-gpt4o-svc"`).
-- It isolates configuration (each Provider has its own plugins).
-- It makes route switching simple (change the Route's `service.id`).
+Each Provider entity maps to exactly one Kong Service. The Kong Service name is **user-provided** and stored in the `kongServiceName` field, which is **immutable** after creation. This ensures clean Prometheus labels and isolates configuration.
 
-**API Key Ownership:**
-The API key is stored on the Provider entity (`encryptedApiKey`). For different keys, **create separate Provider entities**. This works because each Client gets its own Provider Service, so in practice, different Clients using the "same" Provider actually have separate Kong Services with separate plugin configs.
+**Naming Convention:**
+- The `kongServiceName` is sanitized to ensure compatibility with Kong (e.g., `openai-svc`).
+- The `displayName` field is a human-readable label and is **updatable**.
 
 ### 4.2 Client‑Provider Link = Kong Route (1:1)
-Each active Link (Client ↔ Provider) gets a dedicated Kong Route. Route path = `/{sanitised-client-name}`. Route points to the Provider's Kong Service. This means:
-- A Client with 3 Providers has 3 Routes (one per link), but only the primary link's Route is "active" (the one the Client actually calls).
+Each active Link (Client ↔ Provider) gets a dedicated Kong Route. The Route path is `/{sanitised-client-name}`, and the Route name is **stable and immutable** (`{client}-rt`). This ensures consistency even if the Client is renamed.
+
+- A Client with multiple Providers has multiple Routes (one per link), but only the primary link's Route is "active."
 - Switching primary = updating the Route's `service.id` to point to the new Provider's Service.
 - When a Client is blocked (no active links), the Route points to a **bad service** (429 or 503).
 
-**One Primary per Client:**
-Exactly one link with `kind='primary'` per active Client. The frontend enforces this in the UI; the backend rejects duplicate primary creation (`LinkService.linkClientToProvider` throws `ConflictException`).
-
-### 4.3 API Key Lives on Provider
-Normally, an API key should be per‑Client‑Provider link (different Clients may have different keys for the same Provider). For simplicity, we store the key on the Provider entity. This works because each Client gets its own Provider Service (the 1:1 lie), so in practice, different Clients using the "same" Provider actually have separate Kong Services with separate plugin configs. The key can be different per Client if the admin creates separate Provider entities.
+### 4.3 API Key Ownership
+The API key is stored on the Provider entity (`encryptedApiKey`). For different keys, **create separate Provider entities**. This works because each Client gets its own Provider Service, so in practice, different Clients using the "same" Provider actually have separate Kong Services with separate plugin configs.
 
 ### 4.4 Health = Empirical Error Counting
 No active health probes. `HealthService` counts consecutive 5xx/429 errors from `metrics.updated` events. Threshold = 10. When threshold reached:
@@ -129,9 +127,6 @@ No active health probes. `HealthService` counts consecutive 5xx/429 errors from 
 
 Recovery: Admin must manually reactivate the link (`activateLink`), then manually switch (`selectLink`). There is no automatic re‑probing or self‑healing.
 
-**`activateLink` Semantics:**
-It only changes `kind` from `secondary-inactive` to `secondary-active` and clears `incidentId`. It **does not** restore traffic. Admin must separately call `selectLink` to switch traffic back.
-
 ### 4.5 Failover = Manual or Rule‑Based
 A `FailoverRule` (per Client) determines whether automatic failover is allowed (`onLimit`, `onDead`). If allowed, `LinkService.handleLinkFailure` promotes the **first** `secondary-active` link to primary. The "first" is determined by **creation order** (`ORDER BY created_at ASC` in SQL). If no secondary exists, the Client becomes blocked (route → bad service). Admin must later reactivate and switch.
 
@@ -139,7 +134,7 @@ A `FailoverRule` (per Client) determines whether automatic failover is allowed (
 `RequestLimit` and `TokenLimit` are cumulative counters (not per‑second rates). When exceeded, the link is deactivated. No automatic reset. Admin must archive the old limit and create a new one (or reactivate the link).
 
 **TokenLimit Scope:**
-`TokenLimit` is **global per AI Provider**. The `TokenLimit` table has `provider_id` (FK to providers), no `client_id`. When exceeded, `IncidentService` finds all primary links using that provider and deactivates them.
+`TokenLimit` is **global per AI Provider**. When exceeded, all primary links using that provider are deactivated.
 
 ### 4.7 No Cost Tracking
 No cost fields on any entity. No per‑request billing. Deferred.
@@ -148,7 +143,7 @@ No cost fields on any entity. No per‑request billing. Deferred.
 Incidents are append‑only logs. No status transitions (OPEN → ACKNOWLEDGED → RESOLVED). The `Incident` entity records the reason, timestamp, and affected link.
 
 ---
----
+
 ## 5. Entity Model (Complete)
 
 ### 5.1 Provider
@@ -159,7 +154,8 @@ Incidents are append‑only logs. No status transitions (OPEN → ACKNOWLEDGED �
 |--------|------|-------|
 | id | uuid | PK |
 | kind | `'llm'` or `'generic'` | discriminator |
-| service_name_cached | text | unique, becomes Kong Service name |
+| kong_service_name | text | **User-provided, immutable** – becomes the Kong Service name |
+| display_name | text | Human-readable label, **updatable** |
 | base_url | text | |
 | auth_method | `'bearer'` / `'apiKey'` / `'query'` | |
 | auth_header_name | text? | for bearer/apiKey |
@@ -169,16 +165,22 @@ Incidents are append‑only logs. No status transitions (OPEN → ACKNOWLEDGED �
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
-**Subtype `generic_providers` (1:1):** `id`, `provider_id` (FK), `name`.
-**Subtype `ai_providers` (1:1):** `id`, `provider_id` (FK), `name`, `model_name`.
+**AI subtype `ai_providers` (1:1 with provider):**
 
-**Derivation of `service_name_cached`:**
-- Generic: sanitise(`name`) → e.g. `"stripe-api"` → `stripe-api-svc`
-- AI: sanitise(`name` + "-" + `model_name`) → e.g. `"openai"` + `"gpt-4o"` → `openai-gpt4o-svc`
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK |
+| provider_id | uuid | FK → providers.id |
+| ai_provider_name | text | e.g., "openai", "gemini" – **updatable** |
+| ai_model_name | text | e.g., "gpt-4o", "gemini-2.5-flash" – **updatable** |
+
+**There is no separate `generic_providers` table.**
+Generic providers use only the base `providers` table with `kind = 'generic'`.
 
 **Invariants:**
 - A Provider can be archived only if no active `ClientProviderLink` references it.
-- `serviceNameCached` is unique across all Providers.
+- `kong_service_name` is **unique** across all Providers and **never changes** after creation.
+- `ai_provider_name` and `ai_model_name` can be updated, and the Kong Service’s AI Proxy plugin is patched automatically.
 
 ---
 
@@ -219,8 +221,8 @@ Incidents are append‑only logs. No status transitions (OPEN → ACKNOWLEDGED �
 | provider_id | uuid | FK → providers.id |
 | kind | `'primary'` / `'secondary-active'` / `'secondary-inactive'` / `'archived'` | |
 | incident_id | uuid? | FK → incidents.id, only when kind = 'secondary-inactive' |
-| kong_service_name | text? | cached Kong service name |
-| kong_route_name | text? | cached Kong route name |
+| kong_service_name | text? | Cached Kong Service name (equals `provider.kong_service_name`) |
+| kong_route_name | text? | **Stable, immutable** (format: `{sanitised_client_name}-rt`) |
 | created_at | timestamp | |
 
 **How `kind` works:**
@@ -272,16 +274,23 @@ Incidents are append‑only logs. No status transitions (OPEN → ACKNOWLEDGED �
 
 **Example:** Admin registers OpenAI GPT‑4o.
 
-1. `ProviderService.registerAIProvider({ name: "openai", modelName: "gpt-4o", baseUrl: "https://api.openai.com", authMethod: "bearer", authHeaderName: "Authorization", encryptedApiKey: "sk-abc" })`
-2. Repository creates `Provider` entity + `AIProvider` sub‑entity. Derives `serviceNameCached = "openai-gpt4o-svc"`.
-3. Adapter calls `POST /services` with `{ name: "openai-gpt4o-svc", url: "https://api.openai.com" }`.
+1. `ProviderService.registerAIProvider({
+   kongServiceName: "openai-svc",
+   displayName: "OpenAI GPT-4o",
+   aiProviderName: "openai",
+   aiModelName: "gpt-4o",
+   baseUrl: "https://api.openai.com",
+   authMethod: "bearer",
+   authHeaderName: "Authorization",
+   encryptedApiKey: "sk-abc"
+   })`
+2. Repository creates `Provider` entity (with `kind = 'llm'`) and an `AIProvider` record containing `aiProviderName` and `aiModelName`. The Kong Service name is set to `openai-svc`.
+3. Adapter calls `POST /services` with `{ name: "openai-svc", url: "https://api.openai.com" }`.
 
 **Bad Services Creation:**
-Two Docker containers run alongside Kong:
+Two Docker containers run alongside Kong and are registered as Kong Services at startup:
 - `limit-exceeded` (port 9429): Returns `429 Too Many Requests`.
 - `provider-dead` (port 9503): Returns `503 Service Unavailable`.
-
-`KongAdapterService.ensureBadServices()` registers them as Kong Services at startup (`onModuleInit`), pointing to `http://limit-exceeded:9429` and `http://provider-dead:9503`. When a Client is blocked, the route's `service.id` is updated to point to the appropriate bad service.
 
 ---
 ### 6.2 Linking Client to Provider
@@ -289,13 +298,15 @@ Two Docker containers run alongside Kong:
 **Example:** Client `chat-service` linked to OpenAI as primary.
 
 1. `LinkService.linkClientToProvider({ clientId: "...", providerId: "...", kind: "primary" })`
-2. Repository creates `ClientProviderLink` with `kind = 'primary'`, `kongServiceName = "openai-gpt4o-svc"`, `kongRouteName = "chat-service-openai-gpt4o-svc-route"`.
+2. Repository creates `ClientProviderLink` with:
+   - `kongServiceName = "openai-svc"`
+   - `kongRouteName = "chat-service-rt"`
 3. Adapter:
-   - Creates Route on the service: `POST /services/openai-gpt4o-svc/routes` with `{ name: "chat-service-openai-gpt4o-svc-route", paths: ["/chat-service"], strip_path: false }`.
-   - Applies AI Proxy plugin: `POST /services/openai-gpt4o-svc/plugins` with `{ name: "ai-proxy", config: { route_type: "llm/v1/chat", auth: { param_name: "key", param_value: "sk-abc", param_location: "query" }, model: { provider: "openai", name: "gpt-4o" }, logging: { log_statistics: true } } }`.
+   - Creates Route: `POST /services/openai-svc/routes` with `{ name: "chat-service-rt", paths: ["/chat-service"], strip_path: false }`.
+   - Applies the correct plugin:
+     - For AI: `ai-proxy` plugin with auth configuration based on `provider.authMethod`.
+     - For generic: `request-transformer` plugin with auth header injection.
 4. Client's `primaryLinkId` set to the new link's ID. Client status = `'active'`.
-
-**For a generic provider** (e.g., Stripe), the plugin would be `request-transformer` instead of `ai-proxy`, injecting an `Authorization` header.
 
 ---
 ### 6.3 Failover / Switching
@@ -309,7 +320,7 @@ Two Docker containers run alongside Kong:
    - Calls `FailoverService.shouldFailover(clientId, 'dead')`.
    - If true, calls `linkRepo.findActiveSecondaries(clientId)` — returns links ordered by `created_at ASC`.
    - Promotes the first one to primary: changes its `kind` to `'primary'`, updates Client's `primaryLinkId`.
-   - Calls `kongAdapter.updateRouteService(routeId, "gemini-pro-svc")` — the Kong Route now points to Gemini's service.
+   - Calls `kongAdapter.updateRouteService(routeId, "gemini-svc")` — the Kong Route now points to Gemini's service.
    - If no failover target exists: sets Client `status = 'dead'`, `primaryLinkId = null`, updates Route to point to `provider-dead-svc` (503).
 
 ---
@@ -413,9 +424,9 @@ All events via `EventEmitter2` (synchronous). Do not change names or payloads.
 ## 10. Metrics & Prometheus
 
 - `PrometheusService` translates `MetricsFilter` into PromQL label selectors:
-  - Client+Provider: `{service="{client}-{provider}-svc"}`
+  - Client+Provider: `{service="{client}-{kongServiceName}"}`
   - Client only: `{service=~"{client}-.*"}`
-  - Provider only: `{service=~".*-{provider}-svc"}`
+  - Provider only: `{service=~".*-{kongServiceName}"}`
   - Global: no filter.
 - `MetricsService` polls every 15s. Caches:
   - Hot cache: latest `KongMetrics` per filter.
@@ -452,19 +463,25 @@ If Prometheus is unreachable, `PrometheusService.querySingle()` returns 0. `Metr
 
 See `docs/api-endpoints.md` for the full list. Controllers delegate to services. DTOs in module `dto/` folders.
 
+**DTO Updates:**
+- `CreateGenericProviderDto`: `kongServiceName`, `displayName`, `baseUrl`, `authMethod`, `authHeaderName`, `authParamName`, `encryptedApiKey`.
+- `CreateAIProviderDto`: `kongServiceName`, `displayName`, `aiProviderName`, `aiModelName`, `baseUrl`, `authMethod`, `authHeaderName`, `authParamName`, `encryptedApiKey`.
+- `UpdateProviderDto`: `displayName`, `aiProviderName`, `aiModelName`, `baseUrl`.
+- `RotateSecretDto`: `apiKey` (plaintext).
+
 ---
 ---
 ## 13. Immediate TODOs
 
-1. Build controllers per API blueprint.
+1. Build controllers per API blueprint. **(Done – controllers exist for all domains)**
 2. Implement/integrate WebSocket chat room for incident collaboration.
-3. Integrate User Login Logic
+3. Integrate User Login Logic.
 4. Fill `NotificationService` with actual webhook calls.
-5. tests (integration...).
+5. Write tests (integration...).
 6. Build frontend consuming SSE and REST.
 7. Demo script.
 
-
+---
 ---
 ## 14. Final Authority
 
@@ -475,6 +492,8 @@ This document describes the final, locked architecture. Entity schemas, event co
 - Cost tracking / billing / budgets
 - Automatic health re‑probing or limit reset
 - Incident state machine (acknowledge/resolve)
+- `NotificationService` implementation
 - GraphQL analytics
 - Redis
 
+**Proceed with integration. Good luck.**

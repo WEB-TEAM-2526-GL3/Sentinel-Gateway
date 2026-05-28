@@ -87,7 +87,7 @@ export class DashboardService {
         latency: globalMetrics?.latency ?? { p50: 0, p95: 0, p99: 0 },
         providers: providers.map((p) => ({
           id: p.id,
-          name: p.serviceNameCached,
+          name: p.kongServiceName,
           kind: p.kind,
           healthy: health.get(p.id) ?? true,
         })),
@@ -125,7 +125,7 @@ export class DashboardService {
       snapshot.data = {
         ...snapshot.data,
         providerId: provider?.id,
-        providerName: provider?.serviceNameCached,
+        providerName: provider?.kongServiceName,
         providerKind: provider?.kind,
         healthy,
         totalRequests: metrics?.totalRequests ?? 0,
@@ -140,7 +140,7 @@ export class DashboardService {
         ...snapshot.data,
         providers: providers.map((p) => ({
           id: p.id,
-          name: p.serviceNameCached,
+          name: p.kongServiceName,
           kind: p.kind,
           baseUrl: p.baseUrl,
           healthy: health.get(p.id) ?? true,

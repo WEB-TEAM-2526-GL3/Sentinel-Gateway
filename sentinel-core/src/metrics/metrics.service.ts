@@ -159,8 +159,8 @@ export class MetricsService {
     return providers
       .filter((p) => p.kind === 'llm')
       .map((p) => ({
-        providerId: (p as any).name,
-        modelName: (p as any).modelName,
+        providerId: (p as any).aiProvider?.aiProviderName,
+        modelName: (p as any).aiProvider?.aiModelName,
       }));
   }
 

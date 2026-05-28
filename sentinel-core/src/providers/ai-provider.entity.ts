@@ -12,11 +12,11 @@ export class AIProvider {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text' })
-  name: string;
+  @Column({ name: 'ai_provider_name', type: 'text' })
+  aiProviderName: string;
 
-  @Column({ name: 'model_name', type: 'text' })
-  modelName: string;
+  @Column({ name: 'ai_model_name', type: 'text' })
+  aiModelName: string;
 
   @OneToOne(() => Provider, (p) => p.aiProvider, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'provider_id' })
