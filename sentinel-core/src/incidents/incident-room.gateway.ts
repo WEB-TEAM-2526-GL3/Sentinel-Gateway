@@ -1,4 +1,5 @@
 import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
   ConnectedSocket,
   MessageBody,
@@ -19,6 +20,9 @@ interface PresentAdmin {
   adminName: string;
   socketId: string;
 }
+
+const INCIDENT_CREATED_EVENT = 'incident.created';
+const INCIDENT_FEED_ROOM = 'incidents:feed';
 
 @WebSocketGateway({
   namespace: '/incident-room',
@@ -47,6 +51,36 @@ export class IncidentRoomGateway implements OnGatewayDisconnect {
     for (const incidentId of this.presenceByIncident.keys()) {
       this.removePresence(incidentId, client.id);
       this.emitPresence(incidentId);
+    }
+  }
+
+  @SubscribeMessage('subscribeIncidentFeed')
+  async subscribeIncidentFeed(@ConnectedSocket() client: Socket): Promise<void> {
+    await client.join(INCIDENT_FEED_ROOM);
+    client.emit('incidentFeedSubscribed');
+  }
+
+  @SubscribeMessage('unsubscribeIncidentFeed')
+  async unsubscribeIncidentFeed(
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    await client.leave(INCIDENT_FEED_ROOM);
+    client.emit('incidentFeedUnsubscribed');
+  }
+
+  @OnEvent(INCIDENT_CREATED_EVENT)
+  async handleIncidentCreated(event: { id: string }): Promise<void> {
+    try {
+      const snapshot = await this.incidentsService.getIncidentSnapshot(
+        event.id,
+      );
+      this.server
+        .to(INCIDENT_FEED_ROOM)
+        .emit('incidentCreated', snapshot.incident);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unexpected error';
+      this.logger.warn(`Failed to broadcast created incident: ${message}`);
     }
   }
 

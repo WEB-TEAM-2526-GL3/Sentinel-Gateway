@@ -50,20 +50,24 @@ const DEMO_SERVICE_ID = '22222222-2222-4222-8222-222222222222';
 const DEMO_PROVIDER_ID = '33333333-3333-4333-8333-333333333333';
 
 export default function App() {
-  const [adminName, setAdminName] = useState('Ali');
+  const [adminName, setAdminName] = useState('Ali' + Math.floor(Math.random() * 10000) );
   const [showAdminDetails, setShowAdminDetails] = useState(false);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [snapshot, setSnapshot] = useState<IncidentSnapshot | null>(null);
   const [presence, setPresence] = useState<PresenceAdmin[]>([]);
-  const [reason, setReason] = useState('OpenAI timeout spike');
-  const [severity, setSeverity] = useState<IncidentSeverity>('HIGH');
+  const [reason, setReason] = useState('Error number #'+Math.floor(Math.random() * 100000));
+  const [severity, setSeverity] = useState<IncidentSeverity>(  ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][
+    Math.floor(Math.random() * 4)
+  ] as IncidentSeverity);
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('Ready');
   const [error, setError] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   
   const socketRef = useRef<Socket | null>(null);
+  const hasConnectedRef = useRef(false);
+  const selectedIdRef = useRef('');
 
   const adminId = useMemo(() => makeAdminId(adminName), [adminName]);
   const selectedIncident = useMemo(
@@ -80,17 +84,35 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  useEffect(() => {
     const socket = io(`${API_URL}/incident-room`, {
       transports: ['websocket'],
       autoConnect: true,
     });
 
     socketRef.current = socket;
-    socket.on('connect', () => setNotice('Realtime connected'));
+    socket.on('connect', () => {
+      socket.emit('subscribeIncidentFeed');
+      setNotice('Realtime connected');
+
+      if (hasConnectedRef.current) {
+        void loadIncidents();
+      }
+
+      hasConnectedRef.current = true;
+    });
     socket.on('disconnect', () => {
       setNotice('Realtime disconnected');
       setIsJoined(false);
       setPresence([]);
+    });
+    socket.on('incidentCreated', (incident: Incident) => {
+      setIncidents((current) => upsertIncident(current, incident));
+      setError('');
+      setNotice(`New incident ${shortId(incident.id)} received`);
     });
     socket.on(
       'incidentJoined',
@@ -113,9 +135,7 @@ export default function App() {
     socket.on('incidentUpdated', (payload: IncidentSnapshot) => {
       setSnapshot(payload);
       setIncidents((current) =>
-        current.map((incident) =>
-          incident.id === payload.incident.id ? payload.incident : incident,
-        ),
+        upsertIncident(current, payload.incident),
       );
       setError('');
       setNotice(`${payload.incident.status} update received`);
@@ -134,7 +154,7 @@ export default function App() {
       const data = await request<Incident[]>('/incidents');
       setIncidents(data);
 
-      if (!selectedId && data[0]) {
+      if (!selectedIdRef.current && data[0]) {
         await loadIncident(data[0].id);
       }
     } catch (loadError) {
@@ -144,6 +164,7 @@ export default function App() {
 
   async function loadIncident(id: string) {
     try {
+      selectedIdRef.current = id;
       setSelectedId(id);
       const data = await request<IncidentSnapshot>(`/incidents/${id}`);
       setSnapshot(data);
@@ -173,7 +194,8 @@ export default function App() {
         }),
       });
 
-      setIncidents((current) => [data.incident, ...current]);
+      setIncidents((current) => upsertIncident(current, data.incident));
+      selectedIdRef.current = data.incident.id;
       setSelectedId(data.incident.id);
       setSnapshot(data);
       setPresence([]);
@@ -293,9 +315,6 @@ export default function App() {
 
           <div className="list-header">
             <h2>Incidents</h2>
-            <button className="secondary" type="button" onClick={() => void loadIncidents()}>
-              Refresh
-            </button>
           </div>
 
           <div className="incident-list">
@@ -419,6 +438,18 @@ export default function App() {
 
 function Badge({ value }: { value: IncidentStatus | IncidentSeverity }) {
   return <span className={`badge ${value.toLowerCase()}`}>{value}</span>;
+}
+
+function upsertIncident(current: Incident[], incident: Incident): Incident[] {
+  const index = current.findIndex((item) => item.id === incident.id);
+
+  if (index === -1) {
+    return [incident, ...current];
+  }
+
+  const next = [...current];
+  next[index] = incident;
+  return next;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
