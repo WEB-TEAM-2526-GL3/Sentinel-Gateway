@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Sentinel Gateway — Dossier d'Architecture</title>
+<title>Sentinel Gateway — Présentation du projet</title>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <style>
   :root{
@@ -13,109 +13,129 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   html{-webkit-print-color-adjust:exact;print-color-adjust:exact;scroll-behavior:smooth;}
   body{font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    color:var(--ink);font-size:12pt;line-height:1.65;}
-  /* ---------- page ---------- */
-  @page{size:A4;margin:18mm 32mm 20mm 32mm;}
+    color:var(--ink);font-size:12pt;line-height:1.6;background:#f6f8fb;}
+  @page{size:A4;margin:18mm 24mm 18mm 24mm;}
   .page-break{page-break-before:always;}
   section{page-break-inside:auto;}
   h1,h2,h3,h4{page-break-after:avoid;}
   table,figure,pre,.box,.diagram{page-break-inside:avoid;}
+
   /* ---------- cover ---------- */
   .cover{height:262mm;display:flex;flex-direction:column;justify-content:space-between;
     background:linear-gradient(150deg,#0d2b45 0%,#13486e 55%,#2c7da0 100%);
-    color:#fff;padding:26mm 20mm;page-break-after:always;border-radius:2px;}
+    color:#fff;padding:26mm 22mm;page-break-after:always;border-radius:4px;}
   .cover .badge{display:inline-block;border:1px solid rgba(255,255,255,.45);
     border-radius:30px;padding:5px 16px;font-size:9pt;letter-spacing:2px;
     text-transform:uppercase;}
-  .cover h1{font-size:40pt;line-height:1.07;font-weight:800;margin:14px 0 8px;}
-  .cover .sub{font-size:14pt;font-weight:300;opacity:.92;max-width:135mm;}
-  .cover .rule{width:70mm;height:4px;background:#7fc7d9;margin:22px 0;border-radius:3px;}
-  .cover .deliverables{display:flex;gap:10px;margin-top:10px;}
-  .cover .deliverables div{flex:1;background:rgba(255,255,255,.09);
-    border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:13px 14px;}
-  .cover .deliverables b{font-size:10.5pt;display:block;margin-bottom:3px;}
-  .cover .deliverables span{font-size:8.4pt;opacity:.8;line-height:1.4;}
-  .cover .meta{font-size:9pt;opacity:.85;border-top:1px solid rgba(255,255,255,.25);
-    padding-top:12px;display:flex;justify-content:space-between;}
-  /* ---------- headings ---------- */
-  .part-title{page-break-before:always;background:var(--navy);color:#fff;
-    border-radius:12px;padding:20px 24px;margin:40px 0 32px;}
+  .cover h1{font-size:44pt;line-height:1.05;font-weight:800;margin:16px 0 6px;}
+  .cover .sub{font-size:14pt;font-weight:300;opacity:.93;max-width:140mm;}
+  .cover .rule{width:80mm;height:4px;background:#7fc7d9;margin:22px 0;border-radius:3px;}
+  .cover .pillars{display:flex;gap:10px;margin-top:10px;}
+  .cover .pillars div{flex:1;background:rgba(255,255,255,.09);
+    border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:14px 14px;}
+  .cover .pillars b{font-size:10.8pt;display:block;margin-bottom:4px;}
+  .cover .pillars span{font-size:8.5pt;opacity:.85;line-height:1.45;}
+  .cover .meta{font-size:9pt;opacity:.88;border-top:1px solid rgba(255,255,255,.25);
+    padding-top:14px;display:flex;justify-content:space-between;}
+
+  /* ---------- part dividers ---------- */
+  .part-title{page-break-before:always;background:linear-gradient(135deg,var(--navy),var(--blue));
+    color:#fff;border-radius:14px;padding:26px 28px;margin:40px 0 28px;
+    box-shadow:0 6px 20px rgba(13,43,69,.15);}
   .part-title .k{font-size:9pt;letter-spacing:3px;opacity:.7;text-transform:uppercase;}
-  .part-title h1{font-size:22pt;font-weight:800;margin-top:4px;}
-  h2{font-size:16pt;color:var(--navy);margin:28px 0 12px;padding-bottom:8px;
-    border-bottom:2.5px solid var(--teal);}
-  h3{font-size:13pt;color:var(--blue);margin:18px 0 8px;}
-  h4{font-size:11.5pt;color:var(--teal);margin:14px 0 6px;font-weight:700;}
-  p{margin:12px 0;text-align:justify;}
-  ul,ol{margin:12px 0 12px 28px;}
+  .part-title h1{font-size:26pt;font-weight:800;margin-top:6px;}
+  .part-title .sub{font-size:11pt;opacity:.85;margin-top:6px;max-width:160mm;}
+
+  /* ---------- slide sections ---------- */
+  section{background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:26px 30px;margin:22px 0;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+  section .slide-tag{display:inline-block;font-size:8pt;letter-spacing:2px;text-transform:uppercase;
+    color:var(--teal);font-weight:700;margin-bottom:6px;}
+  h2{font-size:18pt;color:var(--navy);margin:4px 0 14px;padding-bottom:10px;
+    border-bottom:3px solid var(--teal);font-weight:800;}
+  h3{font-size:13pt;color:var(--blue);margin:20px 0 8px;font-weight:700;}
+  h4{font-size:11pt;color:var(--teal);margin:14px 0 6px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.5px;}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0 10px 24px;}
   li{margin:5px 0;}
   code{background:#eef2f6;border-radius:4px;padding:2px 6px;
     font-family:"JetBrains Mono",Consolas,monospace;font-size:9.5pt;color:#0a3a52;}
   pre{background:#0d2b45;color:#dce6ee;border-radius:9px;padding:14px 16px;
     font-family:"JetBrains Mono",Consolas,monospace;font-size:9pt;line-height:1.6;
-    overflow-x:auto;margin:14px 0;}
+    overflow-x:auto;margin:12px 0;}
   pre .c{color:#7fa9c4;}
   pre .k{color:#7fc7d9;}
   pre .s{color:#e6b86f;}
+
   /* ---------- tables ---------- */
-  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:9.5pt;}
-  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;
-    vertical-align:top;}
-  th{background:var(--navy);color:#fff;font-weight:600;font-size:9pt;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:9.6pt;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--navy);color:#fff;font-weight:600;font-size:9pt;
+    text-transform:uppercase;letter-spacing:0.4px;}
   tr:nth-child(even) td{background:var(--bg-soft);}
-  td code{font-size:8pt;}
+  td code{font-size:8.5pt;}
+
   /* ---------- components ---------- */
-  .box{border:1px solid var(--line);border-left:4px solid var(--teal);
-    background:#f7fafc;border-radius:8px;padding:14px 16px;margin:14px 0;}
+  .box{border:1px solid var(--line);border-left:5px solid var(--teal);
+    background:#f7fafc;border-radius:10px;padding:14px 16px;margin:12px 0;}
   .box.warn{border-left-color:var(--amber);background:#fdf7ec;}
   .box.ok{border-left-color:var(--green);background:#eef8f1;}
   .box.info{border-left-color:var(--blue);background:#eef3f8;}
+  .box.danger{border-left-color:var(--red);background:#fbeeee;}
   .box h4{margin-top:0;}
-  .lead{font-size:11.5pt;color:var(--grey);margin:8px 0 16px;}
+  .lead{font-size:11.5pt;color:var(--grey);margin:4px 0 16px;}
+
   .tag{display:inline-block;background:var(--teal);color:#fff;border-radius:20px;
-    padding:1px 9px;font-size:7.6pt;font-weight:600;margin-right:4px;}
+    padding:2px 10px;font-size:7.8pt;font-weight:700;margin-right:4px;
+    letter-spacing:0.4px;text-transform:uppercase;}
   .tag.g{background:var(--green);}.tag.a{background:var(--amber);}
   .tag.r{background:var(--red);}.tag.v{background:var(--violet);}.tag.b{background:var(--blue);}
-  .grid2{display:flex;gap:12px;flex-wrap:wrap;}
+  .tag.n{background:var(--navy);}
+
+  .grid2{display:flex;gap:14px;flex-wrap:wrap;}
   .grid2>div{flex:1 1 44%;}
-  .cardrow{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+
+  .cardrow{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;}
   .card{flex:1 1 30%;background:#f7fafc;border:1px solid var(--line);
-    border-radius:9px;padding:9px 11px;font-size:8.6pt;}
-  .card b{color:var(--navy);font-size:9pt;}
-  .diagram{background:#fff;border:1px solid var(--line);border-radius:10px;
-    padding:14px;margin:12px 0;text-align:center;}
-  .diagram .cap{font-size:8pt;color:var(--grey);margin-top:7px;font-style:italic;}
+    border-radius:11px;padding:12px 14px;font-size:9pt;}
+  .card b{color:var(--navy);font-size:10pt;display:block;margin-bottom:4px;}
+  .card.accent{background:#e3eef3;border-color:#9ecbd9;}
+  .card.green{background:#eef8f1;border-color:#bfdcc8;}
+  .card.warn{background:#fdf7ec;border-color:#e8cf9a;}
+
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0;}
+  .kpi div{background:linear-gradient(135deg,#f7fafc,#e3eef3);border:1px solid var(--line);
+    border-radius:11px;padding:14px;text-align:center;}
+  .kpi b{display:block;font-size:18pt;color:var(--navy);font-weight:800;}
+  .kpi span{font-size:8.5pt;color:var(--grey);text-transform:uppercase;letter-spacing:0.5px;}
+
+  .diagram{background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:18px;margin:14px 0;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);}
+  .diagram .cap{font-size:8.5pt;color:var(--grey);margin-top:10px;font-style:italic;}
   .mermaid{display:flex;justify-content:center;}
   .mermaid svg{max-width:100%;height:auto;background:#fff !important;}
   .mermaid svg text{fill:#0d2b45 !important;}
   .mermaid g text{fill:#0d2b45 !important;}
+
   /* ---------- TOC ---------- */
   .toc{page-break-after:always;}
-  .toc h2{border-bottom:2.5px solid var(--teal);}
+  .toc h2{border-bottom:3px solid var(--teal);}
   .toc ol{list-style:none;margin-left:0;}
-  .toc>ol>li{font-weight:700;color:var(--navy);margin:14px 0 5px;font-size:11.5pt;}
-  .toc>ol>li>ol{margin:5px 0 5px 18px;}
+  .toc>ol>li{font-weight:700;color:var(--navy);margin:14px 0 6px;font-size:12pt;}
+  .toc>ol>li>ol{margin:6px 0 6px 18px;}
   .toc>ol>li>ol>li{font-weight:400;color:var(--ink);font-size:10.5pt;margin:3px 0;}
-  .toc a{color:var(--ink);text-decoration:none;cursor:pointer;border-bottom:1px dotted var(--teal);transition:all 0.2s;}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--teal);
+    transition:all 0.2s;}
   .toc a:hover{color:var(--teal);border-bottom-style:solid;}
-  .toc .dot{color:var(--line);}
+
   /* ---------- misc ---------- */
-  .small{font-size:8.3pt;color:var(--grey);}
-  .req-id{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--teal);
-    font-size:8.4pt;white-space:nowrap;}
-  footer.end{margin-top:26px;border-top:1px solid var(--line);padding-top:12px;
-    text-align:center;font-size:8.2pt;color:var(--grey);}
-  .legendrow{display:flex;gap:8px;flex-wrap:wrap;font-size:8pt;margin:6px 0;}
-  .legendrow span{background:var(--bg-soft);border:1px solid var(--line);
-    border-radius:5px;padding:2px 7px;}
-  /* ---------- screen view improvements ---------- */
-  @media screen {
-    body{padding:0 40px;}
-  }
-  section{background:#fff;border:1px solid var(--line);border-radius:12px;
-    padding:20px;margin:20px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
-  section + section{margin-top:24px;}
-  .part-title + section{margin-top:28px;}
+  .small{font-size:8.6pt;color:var(--grey);}
+  footer.end{margin-top:30px;border-top:1px solid var(--line);padding-top:14px;
+    text-align:center;font-size:8.5pt;color:var(--grey);}
+  @media screen { body{padding:0 40px;} }
 </style>
 </head>
 <body>
@@ -123,23 +143,23 @@
 <!-- ============ COVER ============ -->
 <div class="cover">
   <div>
-    <span class="badge">Dossier d'Ingénierie Logicielle</span>
+    <span class="badge">Présentation projet</span>
     <h1>Sentinel<br>Gateway</h1>
     <div class="rule"></div>
-    <p class="sub">Control Plane intelligent au-dessus de Kong API Gateway.
-    Cahier des charges, architecture NestJS détaillée et plan d'implémentation
-    pour une équipe de 6 développeurs.</p>
+    <p class="sub">Control plane NestJS au-dessus de Kong 3.x, observant le trafic via
+    Prometheus, déclenchant des incidents collaboratifs et notifiant les équipes par
+    Slack, Discord et webhooks génériques.</p>
   </div>
   <div>
-    <div class="deliverables">
-      <div><b>I · Cahier des charges</b><span>Exigences fonctionnelles, non-fonctionnelles, cas d'usage et règles métier.</span></div>
-      <div><b>II · Architecture</b><span>Diagrammes de classes, hiérarchie du monorepo NestJS, modèle de données.</span></div>
-      <div><b>III · Plan d'implémentation</b><span>Répartition, dépendances, planning et jalons pour 6 développeurs.</span></div>
+    <div class="pillars">
+      <div><b>Configurer Kong</b><span>REST + GraphQL pour services, routes, plugins et consumers via l'Admin API.</span></div>
+      <div><b>Observer</b><span>Métriques Prometheus, règles de monitoring, santé des services.</span></div>
+      <div><b>Réagir</b><span>Incidents avec salle WebSocket, journal d'actions, fan-out vers Slack/Discord.</span></div>
     </div>
-    <div class="meta" style="margin-top:20px;">
-      <span>Version 1.0 &nbsp;·&nbsp; 24 mai 2026</span>
-      <span>Stack : NestJS · PostgreSQL · Redis · Kong 3.x · React</span>
-      <span>Statut : Prêt pour l'implémentation</span>
+    <div class="meta" style="margin-top:22px;">
+      <span>Version 2.0 &nbsp;·&nbsp; 29 mai 2026</span>
+      <span>Stack : NestJS 11 · TypeORM · PostgreSQL · Kong 3.9 · Prometheus · React + Vite</span>
+      <span>Statut : implémentation MVP en cours</span>
     </div>
   </div>
 </div>
@@ -148,49 +168,36 @@
 <div class="toc">
   <h2>Sommaire</h2>
   <ol>
-    <li>Partie I — Cahier des charges détaillé
+    <li>Partie I — Vue d'ensemble du produit
       <ol>
-        <li><a href="#sect-1-1">1.1 &nbsp; Contexte et positionnement</a></li>
-        <li><a href="#sect-1-2">1.2 &nbsp; Périmètre du projet</a></li>
+        <li><a href="#sect-1-1">1.1 &nbsp; Positionnement et objectifs</a></li>
+        <li><a href="#sect-1-2">1.2 &nbsp; Périmètre actuel</a></li>
         <li><a href="#sect-1-3">1.3 &nbsp; Acteur unique : l'Admin</a></li>
-        <li><a href="#sect-1-4">1.4 &nbsp; Exigences fonctionnelles</a></li>
-        <li><a href="#sect-1-5">1.5 &nbsp; Exigences non-fonctionnelles</a></li>
-        <li><a href="#sect-1-6">1.6 &nbsp; Cas d'utilisation détaillés</a></li>
-        <li><a href="#sect-1-7">1.7 &nbsp; Règles de gestion</a></li>
-        <li><a href="#sect-1-8">1.8 &nbsp; Contraintes et hypothèses</a></li>
-        <li><a href="#sect-1-9">1.9 &nbsp; Critères d'acceptation du MVP</a></li>
+        <li><a href="#sect-1-4">1.4 &nbsp; Surface fonctionnelle livrée</a></li>
+        <li><a href="#sect-1-5">1.5 &nbsp; Critères d'acceptation MVP</a></li>
       </ol>
     </li>
-    <li>Partie II — Architecture détaillée
+    <li>Partie II — Architecture en place
       <ol>
-        <li><a href="#sect-2-1">2.1 &nbsp; Vision architecturale et style</a></li>
-        <li><a href="#sect-2-2">2.2 &nbsp; Architecture système globale</a></li>
-        <li><a href="#sect-2-3">2.3 &nbsp; Architecture en couches</a></li>
-        <li><a href="#sect-2-4">2.4 &nbsp; Découpage du monorepo NestJS</a></li>
-        <li><a href="#sect-2-5">2.5 &nbsp; Hiérarchie complète du projet</a></li>
-        <li><a href="#sect-2-6">2.6 &nbsp; Modules NestJS et responsabilités</a></li>
-        <li><a href="#sect-2-7">2.7 &nbsp; Modèle de domaine et diagramme de classes</a></li>
-        <li><a href="#sect-2-8">2.8 &nbsp; Diagramme de classes — couche applicative</a></li>
-        <li><a href="#sect-2-9">2.9 &nbsp; Architecture événementielle</a></li>
-        <li><a href="#sect-2-10">2.10 &nbsp; Diagramme de séquence — fallback</a></li>
-        <li><a href="#sect-2-11">2.11 &nbsp; Cycle de vie d'un incident</a></li>
-        <li><a href="#sect-2-12">2.12 &nbsp; Modèle physique de données (ERD)</a></li>
-        <li><a href="#sect-2-13">2.13 &nbsp; Patterns de conception appliqués</a></li>
-        <li><a href="#sect-2-14">2.14 &nbsp; Sécurité et architecture frontend</a></li>
+        <li><a href="#sect-2-1">2.1 &nbsp; Vue d'ensemble système</a></li>
+        <li><a href="#sect-2-2">2.2 &nbsp; Découpage du projet</a></li>
+        <li><a href="#sect-2-3">2.3 &nbsp; Hiérarchie complète</a></li>
+        <li><a href="#sect-2-4">2.4 &nbsp; Modules NestJS et responsabilités</a></li>
+        <li><a href="#sect-2-5">2.5 &nbsp; Architecture événementielle</a></li>
+        <li><a href="#sect-2-6">2.6 &nbsp; Modèle de domaine</a></li>
+        <li><a href="#sect-2-7">2.7 &nbsp; Séquence : détection d'anomalie</a></li>
+        <li><a href="#sect-2-8">2.8 &nbsp; Cycle de vie d'un incident</a></li>
+        <li><a href="#sect-2-9">2.9 &nbsp; Modèle physique de données</a></li>
+        <li><a href="#sect-2-10">2.10 &nbsp; Protocoles utilisés</a></li>
+        <li><a href="#sect-2-11">2.11 &nbsp; Sécurité et authentification</a></li>
       </ol>
     </li>
-    <li>Partie III — Plan d'implémentation (6 développeurs)
+    <li>Partie III — Équipe et démonstration
       <ol>
-        <li><a href="#sect-3-1">3.1 &nbsp; Principes d'organisation</a></li>
-        <li><a href="#sect-3-2">3.2 &nbsp; Matrice de répartition</a></li>
-        <li><a href="#sect-3-3">3.3 &nbsp; Graphe de dépendances entre lots</a></li>
-        <li><a href="#sect-3-4">3.4 &nbsp; Contrats d'interface (gel des contrats)</a></li>
-        <li><a href="#sect-3-5">3.5 &nbsp; Planning et découpage en phases</a></li>
-        <li><a href="#sect-3-6">3.6 &nbsp; Feuille de route détaillée par développeur</a></li>
-        <li><a href="#sect-3-7">3.7 &nbsp; Stratégie de tests</a></li>
-        <li><a href="#sect-3-8">3.8 &nbsp; Definition of Done et jalons</a></li>
-        <li><a href="#sect-3-9">3.9 &nbsp; Gestion des risques</a></li>
-        <li><a href="#sect-3-10">3.10 &nbsp; Scénario de démonstration finale</a></li>
+        <li><a href="#sect-3-1">3.1 &nbsp; Répartition de l'équipe</a></li>
+        <li><a href="#sect-3-2">3.2 &nbsp; Stratégie de tests</a></li>
+        <li><a href="#sect-3-3">3.3 &nbsp; Limites actuelles</a></li>
+        <li><a href="#sect-3-4">3.4 &nbsp; Scénario de démonstration</a></li>
       </ol>
     </li>
   </ol>
@@ -199,332 +206,165 @@
 <!-- ================= PARTIE I ================= -->
 <div class="part-title">
   <div class="k">Partie I</div>
-  <h1>Cahier des charges détaillé</h1>
+  <h1>Vue d'ensemble du produit</h1>
+  <div class="sub">Ce que fait Sentinel Gateway aujourd'hui, ce qui est volontairement
+  hors périmètre, et qui s'en sert.</div>
 </div>
 
 <section>
-<h2 id="sect-1-1">1.1 — Contexte et positionnement</h2>
-<p>Les organisations exposent un nombre croissant d'APIs internes et de fournisseurs
-externes — notamment des fournisseurs de modèles de langage (OpenAI, Gemini, Claude) et
-des services tiers (Stripe, Twilio). Ces dépendances introduisent trois problèmes
-opérationnels majeurs : l'absence de visibilité unifiée sur le trafic et les coûts,
-la difficulté à réagir vite lors d'une panne fournisseur, et l'impossibilité de gouverner
-les dépenses liées à l'IA.</p>
-
-<p><strong>Sentinel Gateway</strong> répond à ces besoins en se positionnant comme un
-<em>control plane</em> (plan de contrôle) intelligent. Le projet ne réinvente pas
-l'infrastructure de routage : il s'appuie sur <strong>Kong API Gateway</strong>, une
-solution éprouvée en production, qui conserve son rôle de <em>data plane</em>.</p>
+<span class="slide-tag">Slide 01</span>
+<h2 id="sect-1-1">1.1 — Positionnement et objectifs</h2>
+<p class="lead">Sentinel Gateway est un <strong>control plane</strong> NestJS qui pilote
+une instance Kong existante, observe son trafic via Prometheus et orchestre la réponse
+aux anomalies.</p>
 
 <div class="grid2">
   <div class="box info">
-    <h4>Kong — Data Plane</h4>
-    <p class="small">Routage HTTP, proxy, load balancing, gestion des <em>upstreams</em>,
-    application des <em>plugins</em> (authentification, <em>rate limiting</em>),
-    transformations de requêtes. Couche performante, stable, non modifiée.</p>
+    <h4>Kong — Data plane</h4>
+    <p class="small">Kong 3.9.1 en mode base PostgreSQL, plugin Prometheus activé,
+    configuration de bootstrap déclarative (<code>kong.yaml</code>). Aucun code métier
+    n'est embarqué dans Kong.</p>
   </div>
   <div class="box ok">
-    <h4>Sentinel — Control Plane</h4>
-    <p class="small">Observabilité, monitoring temps réel, calcul des coûts, détection
-    et gestion collaborative des incidents, gouvernance des dépenses IA, orchestration
-    dynamique de la configuration Kong. Couche d'intelligence.</p>
+    <h4>sentinel-core — Control plane</h4>
+    <p class="small">Application NestJS unique : configure Kong via son Admin API, lit
+    les métriques exposées à Prometheus, applique des règles d'anomalie, ouvre des
+    incidents collaboratifs et notifie les canaux externes (Slack, Discord).</p>
   </div>
 </div>
 
-<div class="box">
-<h4>Objectif pédagogique et technique</h4>
-<p class="small">Au-delà de sa valeur métier, le projet illustre l'usage <em>pragmatique</em>
-de cinq protocoles web, chacun retenu pour un besoin réel et distinct, sans sur-ingénierie :
-<span class="tag b">REST</span> configuration CRUD &nbsp;
-<span class="tag v">GraphQL</span> exploration analytique &nbsp;
-<span class="tag a">SSE</span> flux de métriques &nbsp;
-<span class="tag r">WebSocket</span> collaboration incident &nbsp;
-<span class="tag g">Webhook</span> intégrations externes.</p>
-</div>
-
-<h3>Objectifs du produit</h3>
+<h3>Objectifs concrets du produit</h3>
 <table>
-<thead><tr><th style="width:18%">Objectif</th><th>Description</th><th style="width:22%">Indicateur de succès</th></tr></thead>
+<thead><tr><th style="width:22%">Objectif</th><th>Ce que Sentinel apporte</th><th style="width:24%">Module porteur</th></tr></thead>
 <tbody>
-<tr><td><strong>Observabilité</strong></td><td>Donner aux admins une vue temps réel et historique du trafic, des latences, des erreurs et des coûts.</td><td>Tableau de bord rafraîchi en &lt; 1 s après un appel.</td></tr>
-<tr><td><strong>Résilience</strong></td><td>Permettre le basculement (fallback) automatique ou manuel vers un fournisseur alternatif.</td><td>Reroutage Kong appliqué en &lt; 500 ms.</td></tr>
-<tr><td><strong>Gouvernance des coûts</strong></td><td>Calculer le coût par fournisseur, détecter les prompts répétés et estimer le gaspillage.</td><td>Coût par appel LLM calculé et attribué au service.</td></tr>
-<tr><td><strong>Collaboration</strong></td><td>Coordonner la résolution d'incidents entre admins en temps réel.</td><td>Salle d'incident partagée avec présence et actions.</td></tr>
-<tr><td><strong>Configuration unifiée</strong></td><td>Centraliser la configuration de Kong via une API unique.</td><td>Toute modification propagée à Kong sans édition manuelle.</td></tr>
+<tr><td><strong>Configurer Kong</strong></td><td>API REST + GraphQL pour CRUD des services, routes, plugins et consumers, sans utiliser l'Admin API à la main.</td><td><code>GatewayModule</code></td></tr>
+<tr><td><strong>Mesurer</strong></td><td>Polling périodique des requêtes / latences / statuts Kong exposés à Prometheus, cache local par scope.</td><td><code>MetricsModule</code></td></tr>
+<tr><td><strong>Détecter</strong></td><td>Règles d'anomalie configurables (error-rate, latence p95, santé upstream) avec cooldown.</td><td><code>MonitoringModule</code></td></tr>
+<tr><td><strong>Coordonner</strong></td><td>Incidents persistés, salle WebSocket avec présence, journal d'actions, SSE de notification.</td><td><code>IncidentsModule</code></td></tr>
+<tr><td><strong>Notifier</strong></td><td>Webhooks sortants typés Slack / Discord / Generic, signature HMAC, deliveries journalisées.</td><td><code>WebhooksModule</code></td></tr>
 </tbody>
 </table>
 </section>
 
 <section>
-<h2 id="sect-1-2">1.2 — Périmètre du projet</h2>
+<span class="slide-tag">Slide 02</span>
+<h2 id="sect-1-2">1.2 — Périmètre actuel</h2>
 <div class="grid2">
   <div>
-    <h4 style="color:var(--green)">Dans le périmètre (MVP)</h4>
+    <h4 style="color:var(--green)">Dans le périmètre</h4>
     <ul class="small">
-      <li>Configuration des <em>providers</em>, <em>services</em>, budgets, règles de fallback et webhooks.</li>
-      <li>Synchronisation de la configuration vers Kong via son Admin API.</li>
-      <li>Ingestion des journaux Kong, calcul de latence / erreurs / coûts.</li>
-      <li>Détection des prompts répétés et estimation du gaspillage.</li>
-      <li>Diffusion temps réel des métriques (SSE) et collaboration incident (WebSocket).</li>
-      <li>API analytique GraphQL pour l'exploration historique.</li>
-      <li>Notifications externes par webhook (Slack, Discord).</li>
-      <li>Tableau de bord React : monitoring, configuration, salle d'incident.</li>
-      <li>Chiffrement des secrets fournisseurs (AES-256-GCM).</li>
+      <li>CRUD complet des services, routes, plugins et consumers Kong via l'Admin API.</li>
+      <li>Polling Prometheus toutes les 15 s et cache par scope (consumer × service).</li>
+      <li>Règles de monitoring CRUD avec types <code>ERROR_RATE</code>, <code>LATENCY_P95</code>, <code>UPSTREAM_HEALTH</code>.</li>
+      <li>Création automatique d'incidents sur <code>monitoring.threshold.exceeded</code>.</li>
+      <li>Salle d'incident WebSocket (présence, chat, ack, resolve) et SSE <code>incident.created</code>.</li>
+      <li>Webhooks sortants Slack / Discord / Generic, signature HMAC, retries avec backoff.</li>
+      <li>Callback Meta Messenger entrant (vérification + ingestion en mémoire).</li>
+      <li>API GraphQL Apollo couvrant gateway, incidents, monitoring, métriques, webhooks.</li>
+      <li>Authentification JWT et secret CEO pour les actions sensibles.</li>
     </ul>
   </div>
   <div>
-    <h4 style="color:var(--red)">Hors périmètre (MVP)</h4>
+    <h4 style="color:var(--red)">Hors périmètre</h4>
     <ul class="small">
-      <li>Multi-tenant : une seule organisation logique.</li>
-      <li>Gestion fine des rôles : un seul type d'acteur (Admin).</li>
-      <li>Facturation client / refacturation par projet.</li>
-      <li>Cache sémantique des réponses LLM.</li>
-      <li>Résolution automatique d'incident assistée par IA.</li>
-      <li>Intégration <em>service mesh</em> (Istio).</li>
-      <li>Déploiement multi-région.</li>
-      <li>Prévision de coûts par apprentissage automatique.</li>
+      <li>Gestion de providers LLM (OpenAI, Gemini, etc.) et calcul de coûts par tokens.</li>
+      <li>Détection de prompts répétés et estimation de gaspillage.</li>
+      <li>Moteur de fallback automatique entre providers.</li>
+      <li>Budgets mensuels par service ou par provider.</li>
+      <li>Chiffrement AES-256-GCM des secrets de provider.</li>
+      <li>Streaming SSE des métriques (seul <code>incident.created</code> est diffusé en SSE).</li>
+      <li>Auto-résolution d'incident sans erreur pendant 5 minutes.</li>
+      <li>Redis Pub/Sub pour scaling multi-instances.</li>
+      <li>Persistance des webhooks et messenger events (V1 en mémoire).</li>
     </ul>
   </div>
 </div>
-<p class="small">Les éléments hors périmètre constituent la trajectoire d'évolution
-post-MVP. L'architecture (Partie II) est conçue pour les accueillir sans refonte.</p>
 </section>
 
 <section>
+<span class="slide-tag">Slide 03</span>
 <h2 id="sect-1-3">1.3 — Acteur unique : l'Admin</h2>
-<p>Pour simplifier la logique métier du MVP, le système ne reconnaît
-<strong>qu'un seul type d'acteur : l'« Admin »</strong>. Il n'existe ni utilisateur final,
-ni client, ni séparation administrateur / utilisateur. Toute personne authentifiée sur
-Sentinel possède les mêmes droits.</p>
+<p>Sentinel ne reconnaît qu'un seul rôle : l'<strong>Admin</strong>. Toute personne
+authentifiée a les mêmes droits, à l'exception des actions de désactivation d'un autre
+admin qui exigent en plus le <strong>CEO secret</strong>.</p>
 <table>
-<thead><tr><th style="width:16%">Acteur</th><th>Description</th><th style="width:34%">Interactions principales</th></tr></thead>
+<thead><tr><th style="width:18%">Acteur</th><th>Description</th><th style="width:34%">Interactions principales</th></tr></thead>
 <tbody>
-<tr><td><strong>Admin</strong></td><td>Opérateur de la plateforme : ingénieur plateforme, SRE ou développeur en charge de la supervision des APIs.</td><td>Configure Kong, supervise le trafic, déclenche les fallbacks, collabore en salle d'incident, consulte les analyses.</td></tr>
-<tr><td class="small">Kong <span class="small">(système)</span></td><td>Acteur système : émet les journaux de trafic consommés par Sentinel.</td><td>Pousse les logs HTTP vers le Metrics Engine.</td></tr>
-<tr><td class="small">Systèmes externes</td><td>Acteurs système : destinataires des notifications (Slack, Discord, PagerDuty).</td><td>Reçoivent les webhooks émis par Sentinel.</td></tr>
+<tr><td><strong>Admin</strong></td><td>Ingénieur plateforme / SRE chargé de la supervision Kong.</td><td>Configure Kong, gère les règles de monitoring, rejoint les salles d'incident, configure les webhooks.</td></tr>
+<tr><td>Kong <span class="small">(système)</span></td><td>Data plane proxifiant le trafic.</td><td>Expose ses métriques à Prometheus via le plugin <code>prometheus</code>.</td></tr>
+<tr><td>Prometheus <span class="small">(système)</span></td><td>Source de métriques.</td><td>Scrape Kong toutes les 15 s ; interrogé par <code>MetricsService</code>.</td></tr>
+<tr><td>Externes</td><td>Destinataires des notifications.</td><td>Slack, Discord et tout webhook <code>GENERIC</code>.</td></tr>
+<tr><td>Meta Messenger</td><td>Émetteur de callbacks entrants.</td><td>Vérification du token + livraison d'événements à <code>/messenger/webhook</code>.</td></tr>
 </tbody>
 </table>
 <div class="box info"><p class="small"><strong>Conséquence architecturale.</strong>
-Le module <code>AuthModule</code> implémente une authentification JWT simple
-(connexion, émission, vérification du jeton) sans matrice de permissions. L'extension
-vers un modèle RBAC est documentée comme évolution.</p></div>
+<code>AuthModule</code> implémente une auth JWT simple ; les actions sensibles (suppression
+d'un admin) exigent en plus <code>CeoSecretService.validateOrThrow</code>. Pas de matrice
+RBAC à ce stade.</p></div>
 </section>
 
 <section>
-<h2 id="sect-1-4">1.4 — Exigences fonctionnelles</h2>
-<p class="lead">Les exigences sont identifiées par un code <code>FR-DOMAINE-NN</code>.
-Chaque exigence porte une priorité : <span class="tag r">M</span> Must,
-<span class="tag a">S</span> Should, <span class="tag g">C</span> Could (méthode MoSCoW).</p>
+<span class="slide-tag">Slide 04</span>
+<h2 id="sect-1-4">1.4 — Surface fonctionnelle livrée</h2>
+<p class="lead">Récapitulatif des endpoints exposés. Toutes les routes REST métier sont
+protégées par <code>JwtAuthGuard</code>, sauf <code>/webhooks/emit</code> (contrat
+interne) et <code>/messenger/webhook</code> (callback Meta).</p>
 
-<h3>1.4.1 — Gestion des fournisseurs (Providers)</h3>
+<h3>REST</h3>
 <table>
-<thead><tr><th style="width:12%">Code</th><th>Exigence</th><th style="width:9%">Prio.</th></tr></thead>
+<thead><tr><th style="width:24%">Domaine</th><th>Endpoints clés</th></tr></thead>
 <tbody>
-<tr><td class="req-id">FR-PRV-01</td><td>L'admin doit pouvoir créer un provider en renseignant son nom, son type (<code>llm</code>, <code>payment</code>, <code>internal</code>), son URL de base, son type d'authentification et son budget mensuel.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-PRV-02</td><td>Le secret d'API d'un provider doit être chiffré (AES-256-GCM) avant persistance et ne jamais être renvoyé en clair par l'API.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-PRV-03</td><td>L'admin doit pouvoir lister, consulter, modifier (budget, statut actif) un provider.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-PRV-04</td><td>La suppression d'un provider doit être logique (<em>soft delete</em>) afin de préserver la traçabilité historique ; un provider n'est jamais supprimé physiquement.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-PRV-05</td><td>Le système doit refuser la création de deux providers portant le même nom (conflit 409).</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-PRV-06</td><td>L'admin doit pouvoir consulter, pour chaque provider, son coût mensuel cumulé et son taux d'erreur.</td><td><span class="tag a">S</span></td></tr>
+<tr><td><strong>Auth</strong></td><td><code>POST /auth/register</code> · <code>POST /auth/login</code> · <code>GET /auth/me</code> · <code>POST /auth/logout</code> · <code>GET /auth/admins</code> · <code>DELETE /auth/admins/:id</code></td></tr>
+<tr><td><strong>Gateway (Kong)</strong></td><td><code>… /gateway/services</code> · <code>… /gateway/services/:id/api-key</code> · <code>… /gateway/services/:id/header</code> · <code>… /gateway/services/:id/routes</code> · <code>… /gateway/routes</code> · <code>… /gateway/consumers</code> · <code>POST /gateway/routes/:routeId/consumers/:consumerId</code></td></tr>
+<tr><td><strong>Monitoring</strong></td><td><code>… /monitoring/rules</code> · <code>POST /monitoring/check</code> · <code>GET /monitoring/status</code></td></tr>
+<tr><td><strong>Incidents</strong></td><td><code>POST /incidents</code> · <code>GET /incidents</code> · <code>GET /incidents/:id</code> · <code>SSE /incidents/sse</code></td></tr>
+<tr><td><strong>Webhooks</strong></td><td><code>… /webhooks</code> · <code>GET /webhooks/event-types</code> · <code>POST /webhooks/emit</code> · <code>POST /webhooks/:id/test</code> · <code>GET /webhook-deliveries</code></td></tr>
+<tr><td><strong>Messenger (inbound)</strong></td><td><code>GET /messenger/webhook</code> (vérif) · <code>POST /messenger/webhook</code> · <code>GET /messenger/events</code> · <code>GET /messenger/recipients</code></td></tr>
 </tbody>
 </table>
 
-<h3>1.4.2 — Gestion des services et budgets</h3>
-<table>
-<thead><tr><th style="width:12%">Code</th><th>Exigence</th><th style="width:9%">Prio.</th></tr></thead>
-<tbody>
-<tr><td class="req-id">FR-SVC-01</td><td>L'admin doit pouvoir créer un service (nom, équipe, description, budget mensuel).</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-SVC-02</td><td>L'admin doit pouvoir associer un ou plusieurs providers à un service, en désignant un provider primaire.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-SVC-03</td><td>Le système doit garantir l'existence d'un seul provider primaire par service.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-BUD-01</td><td>L'admin doit pouvoir définir un budget mensuel et un seuil d'alerte (en pourcentage) par service.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-BUD-02</td><td>Le système doit émettre une alerte <code>BUDGET_WARNING</code> lorsque la dépense atteint le seuil configuré.</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-BUD-03</td><td>Le système doit pouvoir déclencher un incident lorsque le budget est dépassé.</td><td><span class="tag g">C</span></td></tr>
-</tbody>
-</table>
-
-<h3>1.4.3 — Configuration de la gateway et fallback</h3>
-<table>
-<thead><tr><th style="width:12%">Code</th><th>Exigence</th><th style="width:9%">Prio.</th></tr></thead>
-<tbody>
-<tr><td class="req-id">FR-GW-01</td><td>Toute modification de service / route doit être propagée à Kong via son Admin API, sans édition manuelle de Kong.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-GW-02</td><td>Sentinel doit synchroniser périodiquement (intervalle ≤ 30 s) l'état des services et routes Kong dans son cache Redis.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-FB-01</td><td>L'admin doit pouvoir définir une règle de fallback : un provider primaire et une liste ordonnée de providers de repli, avec conditions de déclenchement (<code>on_error</code>, <code>on_timeout</code>, <code>on_budget_exceeded</code>).</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-FB-02</td><td>Le système doit pouvoir basculer le routage Kong vers un provider de repli, de façon automatique sur détection d'erreur ou manuelle sur action admin.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-FB-03</td><td>Chaque activation de fallback doit être journalisée et diffuser un événement <code>FallbackActivated</code>.</td><td><span class="tag r">M</span></td></tr>
-</tbody>
-</table>
-
-<h3>1.4.4 — Collecte de métriques et gouvernance des coûts</h3>
-<table>
-<thead><tr><th style="width:12%">Code</th><th>Exigence</th><th style="width:9%">Prio.</th></tr></thead>
-<tbody>
-<tr><td class="req-id">FR-MET-01</td><td>Le système doit capturer chaque appel proxifié par Kong : horodatage, méthode, chemin, code statut, latence, tailles requête / réponse.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-MET-02</td><td>Pour les appels LLM, le système doit extraire le nombre de tokens (entrée / sortie) et calculer le coût selon une stratégie propre au provider.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-MET-03</td><td>Le système doit classifier les erreurs (401, 403, 429, 5xx, timeout) et détecter les motifs anormaux (ex. 5 erreurs 429 en 1 min).</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-MET-04</td><td>Un job planifié doit agréger les métriques (latence p95/p99, taux d'erreur, coût total) par tranche horaire.</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-CST-01</td><td>Le système doit hacher chaque prompt (SHA-256) et détecter les répétitions sur une fenêtre de 30 jours.</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-CST-02</td><td>Le système doit estimer le gaspillage (coût × nombre de répétitions) et recommander l'activation d'un cache.</td><td><span class="tag a">S</span></td></tr>
-</tbody>
-</table>
-
-<h3>1.4.5 — Temps réel, incidents et notifications</h3>
-<table>
-<thead><tr><th style="width:12%">Code</th><th>Exigence</th><th style="width:9%">Prio.</th></tr></thead>
-<tbody>
-<tr><td class="req-id">FR-RT-01</td><td>Le système doit exposer un flux SSE diffusant les métriques en direct (<code>api_call</code>, <code>token_usage</code>, <code>error_detected</code>, <code>cost_update</code>).</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-RT-02</td><td>Le flux SSE doit émettre un <em>heartbeat</em> toutes les 30 s et gérer la contre-pression (tampon de 100 événements, abandon des plus anciens).</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-INC-01</td><td>Le système doit créer automatiquement un incident sur détection d'une panne fournisseur (timeout, pic d'erreurs, budget dépassé).</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-INC-02</td><td>Chaque incident doit disposer d'une salle WebSocket : les admins rejoignent, échangent par chat, voient la présence des autres.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-INC-03</td><td>Depuis la salle d'incident, un admin doit pouvoir activer un fallback, acquitter et résoudre l'incident.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-INC-04</td><td>Chaque action sur un incident doit être journalisée avec auteur, type d'action et horodatage.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-INC-05</td><td>Un incident doit pouvoir s'auto-résoudre si l'erreur ne se reproduit pas pendant 5 minutes.</td><td><span class="tag g">C</span></td></tr>
-<tr><td class="req-id">FR-WH-01</td><td>L'admin doit pouvoir enregistrer un webhook (type d'événement, URL, politique de retry) ; les notifications sont signées (HMAC) et réessayées 3 fois avec backoff exponentiel.</td><td><span class="tag r">M</span></td></tr>
-</tbody>
-</table>
-
-<h3>1.4.6 — Analytique et tableau de bord</h3>
-<table>
-<thead><tr><th style="width:12%">Code</th><th>Exigence</th><th style="width:9%">Prio.</th></tr></thead>
-<tbody>
-<tr><td class="req-id">FR-AN-01</td><td>Le système doit exposer une API GraphQL permettant d'interroger services, providers, métriques, coûts, incidents et prompts répétés de façon flexible.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-AN-02</td><td>Les requêtes GraphQL doivent supporter le filtrage et la pagination, et éviter les requêtes N+1 par <em>DataLoader</em>.</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-AN-03</td><td>Une requête <code>dashboardOverview</code> doit fournir le résumé global en un seul aller-retour.</td><td><span class="tag a">S</span></td></tr>
-<tr><td class="req-id">FR-UI-01</td><td>Le tableau de bord doit afficher les KPI : requêtes du jour, taux d'erreur, coût mensuel, incidents actifs.</td><td><span class="tag r">M</span></td></tr>
-<tr><td class="req-id">FR-UI-02</td><td>Le tableau de bord doit présenter les pages <code>/dashboard</code>, <code>/services</code>, <code>/providers</code>, <code>/analytics</code>, <code>/incident-room</code> et se mettre à jour en temps réel via SSE et WebSocket.</td><td><span class="tag r">M</span></td></tr>
-</tbody>
-</table>
-</section>
-
-<section>
-<h2 id="sect-1-5">1.5 — Exigences non-fonctionnelles</h2>
-<p class="lead">Identifiées par <code>NFR-NN</code>, elles fixent les contraintes de qualité.</p>
-<table>
-<thead><tr><th style="width:11%">Code</th><th style="width:18%">Catégorie</th><th>Exigence et cible mesurable</th></tr></thead>
-<tbody>
-<tr><td class="req-id">NFR-01</td><td><strong>Performance</strong></td><td>API REST &lt; 500 ms (p95), GraphQL &lt; 2 s (p95), premier message SSE &lt; 100 ms, décision de fallback &lt; 100 ms, mise à jour Kong &lt; 500 ms.</td></tr>
-<tr><td class="req-id">NFR-02</td><td><strong>Débit</strong></td><td>Soutenir 100 à 1000 requêtes/s par instance ; ingérer plusieurs milliers de métriques/s sans perte de configuration.</td></tr>
-<tr><td class="req-id">NFR-03</td><td><strong>Scalabilité</strong></td><td>Scalabilité horizontale à chaque couche : Kong (3→N), Sentinel (2→N) via Redis Pub/Sub, réplicas PostgreSQL.</td></tr>
-<tr><td class="req-id">NFR-04</td><td><strong>Disponibilité</strong></td><td>Objectif de disponibilité 99,5 % ; basculement automatique vers réplica PostgreSQL.</td></tr>
-<tr><td class="req-id">NFR-05</td><td><strong>Fiabilité</strong></td><td>Le flux de métriques tolère la perte (cohérence éventuelle) ; la configuration et les incidents sont transactionnels (ACID). Retries 3× avec backoff exponentiel sur les appels sortants.</td></tr>
-<tr><td class="req-id">NFR-06</td><td><strong>Sécurité</strong></td><td>Authentification JWT (expiration 8 h), HTTPS/TLS, secrets chiffrés AES-256-GCM, validation stricte des entrées, signature HMAC des webhooks.</td></tr>
-<tr><td class="req-id">NFR-07</td><td><strong>Auditabilité</strong></td><td>Toute mutation de configuration et toute action d'incident sont journalisées (auteur, nature, horodatage).</td></tr>
-<tr><td class="req-id">NFR-08</td><td><strong>Observabilité</strong></td><td>Le système s'auto-observe : journaux structurés, métriques exposées, traçabilité des événements inter-modules.</td></tr>
-<tr><td class="req-id">NFR-09</td><td><strong>Maintenabilité</strong></td><td>Découpage modulaire NestJS, frontières claires entre modules, communication par EventBus, couverture de tests unitaires &gt; 80 %.</td></tr>
-<tr><td class="req-id">NFR-10</td><td><strong>Portabilité</strong></td><td>Environnement entièrement conteneurisé (Docker Compose) : démarrage local en une commande.</td></tr>
-<tr><td class="req-id">NFR-11</td><td><strong>Accessibilité (frontend)</strong></td><td>Conformité WCAG 2.1 niveau AA : HTML sémantique, libellés ARIA, navigation clavier.</td></tr>
-</tbody>
-</table>
-</section>
-
-<section>
-<h2 id="sect-1-6">1.6 — Cas d'utilisation détaillés</h2>
-<p class="lead">Trois cas d'usage centraux sont décrits sous forme de scénarios. Les autres
-(CRUD providers, services, webhooks) suivent le même patron CRUD standard.</p>
-
-<div class="box">
-<h4>UC-01 — Configurer un service avec fallback</h4>
-<table>
-<tbody>
-<tr><td style="width:22%"><strong>Acteur</strong></td><td>Admin</td></tr>
-<tr><td><strong>Précondition</strong></td><td>Les providers OpenAI et Gemini existent et sont actifs.</td></tr>
-<tr><td><strong>Scénario nominal</strong></td><td>1. L'admin crée le service <code>chat-service</code> avec un budget mensuel. 2. Il associe OpenAI comme provider primaire. 3. Il associe Gemini comme provider de repli. 4. Il crée une règle de fallback <code>on_error, on_timeout</code>. 5. Sentinel propage la configuration vers Kong. 6. Le système confirme et journalise.</td></tr>
-<tr><td><strong>Scénario alternatif</strong></td><td>3a. Un second provider primaire est refusé (conflit 409, voir BR-02).</td></tr>
-<tr><td><strong>Postcondition</strong></td><td>Le service est routable via Kong ; la règle de fallback est armée.</td></tr>
-</tbody>
-</table>
+<h3>GraphQL</h3>
+<p>Un seul résolveur <code>SentinelGraphqlResolver</code> agrège toute la surface
+métier sous Apollo, protégée par <code>GqlJwtAuthGuard</code>. Les opérations
+principales :</p>
+<div class="cardrow">
+  <div class="card accent"><b>dashboardOverview</b>Profil courant, incidents ouverts, dernier rapport de monitoring, services Kong.</div>
+  <div class="card accent"><b>gatewayServices / gatewayRoutes / gatewayConsumers</b>CRUD complet, ajout de clé API, ajout de header de service.</div>
+  <div class="card accent"><b>incidents / createIncident / sendIncidentMessage</b>Incidents + mutations <code>ackIncident</code>, <code>resolveIncident</code>.</div>
+  <div class="card accent"><b>monitoringRules + runMonitoringCheck</b>CRUD de règles et déclenchement manuel.</div>
+  <div class="card accent"><b>gatewayMetrics / latestGatewayMetrics / serviceHealth</b>Requêtes Prometheus normalisées.</div>
+  <div class="card accent"><b>webhooks / testWebhook / emitWebhookEvent</b>CRUD + déclenchement d'événements et historique des deliveries.</div>
 </div>
 
-<div class="box">
-<h4>UC-02 — Détecter un incident et basculer vers un provider de repli</h4>
-<table>
-<tbody>
-<tr><td style="width:22%"><strong>Acteur</strong></td><td>Admin (+ Kong et Metrics Engine comme acteurs système)</td></tr>
-<tr><td><strong>Précondition</strong></td><td>UC-01 réalisé ; le trafic transite par Kong.</td></tr>
-<tr><td><strong>Déclencheur</strong></td><td>OpenAI dépasse le seuil de timeout (&gt; 5 s) de façon répétée.</td></tr>
-<tr><td><strong>Scénario nominal</strong></td><td>1. Kong pousse le log d'erreur à Sentinel. 2. Le Metrics Engine détecte le timeout et émet <code>ErrorDetected</code>. 3. L'Incident Engine crée un incident et émet <code>IncidentCreated</code>. 4. Une salle WebSocket s'ouvre, les admins sont notifiés. 5. Le SSE diffuse l'événement au tableau de bord. 6. Un admin clique « Switch to Gemini » dans la salle. 7. Le KongAdapter modifie l'<em>upstream</em>. 8. L'événement <code>FallbackActivated</code> est diffusé et journalisé.</td></tr>
-<tr><td><strong>Scénario alternatif</strong></td><td>3a. Une règle de fallback automatique existe : l'étape 6 est exécutée sans intervention humaine.</td></tr>
-<tr><td><strong>Postcondition</strong></td><td>Le trafic est rerouté vers Gemini ; l'incident reste ouvert jusqu'à acquittement.</td></tr>
-</tbody>
-</table>
-</div>
-
-<div class="box">
-<h4>UC-03 — Analyser les coûts et détecter le gaspillage de prompts</h4>
-<table>
-<tbody>
-<tr><td style="width:22%"><strong>Acteur</strong></td><td>Admin</td></tr>
-<tr><td><strong>Précondition</strong></td><td>Un volume d'appels LLM a été collecté.</td></tr>
-<tr><td><strong>Scénario nominal</strong></td><td>1. L'admin ouvre la page <code>/analytics</code>. 2. Le frontend interroge GraphQL (<code>cost_by_provider</code>, <code>repeated_prompts</code>). 3. Le système renvoie les coûts par provider et la liste des prompts répétés &gt; 5 fois. 4. Le système estime le gaspillage et affiche la recommandation « Enable cache for repeated prompts ».</td></tr>
-<tr><td><strong>Postcondition</strong></td><td>L'admin dispose d'une recommandation d'optimisation chiffrée.</td></tr>
-</tbody>
-</table>
-</div>
-</section>
-
-<section>
-<h2 id="sect-1-7">1.7 — Règles de gestion</h2>
-<p class="lead">Invariants métier que le système doit garantir en permanence.</p>
-<table>
-<thead><tr><th style="width:12%">Code</th><th>Règle</th></tr></thead>
-<tbody>
-<tr><td class="req-id">BR-01</td><td>Un provider ne peut jamais être supprimé physiquement : seul un marquage <code>deleted_at</code> / <code>is_active=false</code> est autorisé (piste d'audit).</td></tr>
-<tr><td class="req-id">BR-02</td><td>Un service possède au plus un provider primaire. L'ajout d'un second primaire est rejeté.</td></tr>
-<tr><td class="req-id">BR-03</td><td>Une règle de fallback ne peut être créée que si le provider primaire référencé existe déjà dans le service.</td></tr>
-<tr><td class="req-id">BR-04</td><td>Le budget mensuel d'un service ou d'un provider doit être strictement positif.</td></tr>
-<tr><td class="req-id">BR-05</td><td>Le cycle de vie d'un incident est strictement <code>OPEN → ACKNOWLEDGED → RESOLVED</code> ; un incident résolu ne peut pas être rouvert.</td></tr>
-<tr><td class="req-id">BR-06</td><td>Les identifiants (secrets) d'un provider sont immuables après création : leur modification passe par la création d'un nouveau provider.</td></tr>
-<tr><td class="req-id">BR-07</td><td>Le secret d'API n'est jamais exposé en clair dans une réponse API, un log ou un événement.</td></tr>
-<tr><td class="req-id">BR-08</td><td>Toute configuration est la source de vérité dans PostgreSQL ; l'état Kong en est dérivé et reconstructible.</td></tr>
-<tr><td class="req-id">BR-09</td><td>Une métrique perdue est tolérable (cohérence éventuelle) ; une configuration partiellement écrite ne l'est pas (transaction ACID).</td></tr>
-</tbody>
-</table>
-</section>
-
-<section>
-<h2 id="sect-1-8">1.8 — Contraintes et hypothèses</h2>
+<h3>Temps réel</h3>
 <div class="grid2">
-  <div>
-    <h4>Contraintes techniques</h4>
-    <ul class="small">
-      <li><strong>Stack imposée :</strong> NestJS (monorepo), PostgreSQL, Redis, Kong 3.x, React + Vite.</li>
-      <li><strong>Protocoles imposés :</strong> les cinq protocoles (REST, GraphQL, SSE, WebSocket, Webhook) doivent être présents et justifiés.</li>
-      <li><strong>Conteneurisation :</strong> tout composant tourne sous Docker Compose.</li>
-      <li><strong>Kong non modifié :</strong> Kong est utilisé tel quel ; aucune logique métier n'y est embarquée.</li>
-    </ul>
-  </div>
-  <div>
-    <h4>Contraintes projet</h4>
-    <ul class="small">
-      <li><strong>Équipe :</strong> 6 développeurs, un lot fonctionnel par personne.</li>
-      <li><strong>Durée :</strong> itération courte (mode « video-coding », 1 à 2 jours par module sur le chemin critique).</li>
-      <li><strong>Livrable final :</strong> MVP démontrable de bout en bout + documentation + démo.</li>
-    </ul>
-    <h4>Hypothèses</h4>
-    <ul class="small">
-      <li>Les fournisseurs LLM exposent le nombre de tokens dans leurs réponses.</li>
-      <li>Le trafic de démonstration peut être simulé.</li>
-      <li>Un seul environnement (développement) est requis pour le MVP.</li>
-    </ul>
-  </div>
+  <div class="box"><h4>WebSocket — <code>/incident-room</code></h4>
+  <p class="small">Événements <code>joinIncident</code>, <code>leaveIncident</code>,
+  <code>sendMessage</code>, <code>ackIncident</code>, <code>resolveIncident</code> ;
+  diffusion <code>incidentJoined</code>, <code>incidentMessage</code>,
+  <code>incidentUpdated</code>, <code>presenceUpdated</code>, <code>incidentError</code>.</p></div>
+  <div class="box"><h4>SSE — <code>GET /incidents/sse</code></h4>
+  <p class="small">Flux <code>incident-created</code> ; permet à un dashboard non-WS de
+  réagir à la création d'un incident sans rejoindre la salle.</p></div>
 </div>
 </section>
 
 <section>
-<h2 id="sect-1-9">1.9 — Critères d'acceptation du MVP</h2>
-<p>Le MVP est accepté lorsque l'ensemble des critères ci-dessous est démontrable de bout en bout.</p>
+<span class="slide-tag">Slide 05</span>
+<h2 id="sect-1-5">1.5 — Critères d'acceptation MVP</h2>
+<p class="lead">Le MVP est accepté lorsque l'ensemble est démontrable de bout en bout via
+<code>docker compose up</code> et le scénario §3.4.</p>
 <table>
-<thead><tr><th style="width:12%">Code</th><th>Critère d'acceptation</th><th style="width:18%">Exigences couvertes</th></tr></thead>
+<thead><tr><th style="width:10%">Code</th><th>Critère</th><th style="width:18%">Module(s)</th></tr></thead>
 <tbody>
-<tr><td class="req-id">AC-01</td><td>Kong est opérationnel avec des services et routes vers OpenAI, Gemini et Stripe.</td><td>FR-GW-01/02</td></tr>
-<tr><td class="req-id">AC-02</td><td>L'API REST permet le CRUD complet : providers, services, budgets, fallbacks, webhooks.</td><td>FR-PRV-*, FR-SVC-*, FR-BUD-*, FR-FB-01</td></tr>
-<tr><td class="req-id">AC-03</td><td>Le Metrics Engine collecte latence, erreurs et coûts, et détecte les prompts répétés.</td><td>FR-MET-*, FR-CST-*</td></tr>
-<tr><td class="req-id">AC-04</td><td>Le flux SSE affiche les métriques en direct sur le tableau de bord.</td><td>FR-RT-01/02, FR-UI-02</td></tr>
-<tr><td class="req-id">AC-05</td><td>La salle d'incident WebSocket fonctionne : chat, présence, actions (activation de fallback).</td><td>FR-INC-01..04</td></tr>
-<tr><td class="req-id">AC-06</td><td>L'API GraphQL répond aux requêtes analytiques par service / provider / endpoint.</td><td>FR-AN-*</td></tr>
-<tr><td class="req-id">AC-07</td><td>Un webhook émet une alerte vers un système externe (Slack / Discord).</td><td>FR-WH-01</td></tr>
-<tr><td class="req-id">AC-08</td><td>Le fallback bascule le routage de OpenAI vers Gemini sur erreur / timeout.</td><td>FR-FB-02/03</td></tr>
-<tr><td class="req-id">AC-09</td><td>Le scénario de démonstration complet (§3.10) se déroule sans intervention manuelle hors clics admin.</td><td>Transverse</td></tr>
-<tr><td class="req-id">AC-10</td><td>La couverture de tests unitaires dépasse 80 % sur la logique métier.</td><td>NFR-09</td></tr>
+<tr><td><strong>AC-01</strong></td><td>Kong démarre via Docker Compose avec ses migrations, plugin Prometheus activé, et la config <code>kong.yaml</code> appliquée par <code>deck gateway sync</code>.</td><td>Compose + <code>kong.yaml</code></td></tr>
+<tr><td><strong>AC-02</strong></td><td>Sentinel expose un CRUD REST + GraphQL sur les services, routes et consumers Kong (création/suppression visibles sur l'Admin API).</td><td>GatewayModule</td></tr>
+<tr><td><strong>AC-03</strong></td><td>Prometheus scrape <code>kong:8001/metrics</code> ; <code>MetricsService</code> retourne <code>totalRequests</code>, <code>statusCodes</code>, latences p50/p95/p99.</td><td>MetricsModule</td></tr>
+<tr><td><strong>AC-04</strong></td><td>Une règle <code>ERROR_RATE</code> qui dépasse son seuil déclenche un incident, persisté en base et notifié par WebSocket + Slack/Discord si configurés.</td><td>Monitoring + Incidents + Webhooks</td></tr>
+<tr><td><strong>AC-05</strong></td><td>Deux clients WebSocket dans <code>/incident-room</code> voient la présence l'un de l'autre, échangent des messages, puis acquittent et résolvent l'incident.</td><td>IncidentsModule</td></tr>
+<tr><td><strong>AC-06</strong></td><td>L'API GraphQL répond à <code>dashboardOverview</code> en un appel couvrant moi, incidents ouverts, dernier rapport de monitoring et services Kong.</td><td>SentinelGraphqlModule</td></tr>
+<tr><td><strong>AC-07</strong></td><td>Un webhook Slack ou Discord configuré reçoit un payload <code>INCIDENT_CREATED</code> formaté correctement après ouverture d'un incident.</td><td>WebhooksModule</td></tr>
+<tr><td><strong>AC-08</strong></td><td>Meta Messenger valide le callback (<code>hub.challenge</code>) et les événements inbound apparaissent dans <code>GET /messenger/events</code>.</td><td>MessengerModule</td></tr>
 </tbody>
 </table>
 </section>
@@ -532,1086 +372,623 @@ Chaque exigence porte une priorité : <span class="tag r">M</span> Must,
 <!-- ================= PARTIE II ================= -->
 <div class="part-title">
   <div class="k">Partie II</div>
-  <h1>Architecture détaillée</h1>
+  <h1>Architecture en place</h1>
+  <div class="sub">Composants déployés, modules métier, flux d'événements et entités
+  réellement persistées par <code>sentinel-core</code>.</div>
 </div>
 
 <section>
-<h2 id="sect-2-1">2.1 — Vision architecturale et style</h2>
-<p>Sentinel Gateway adopte un style hybride : <strong>plan de contrôle événementiel
-adossé à un noyau d'orchestration synchrone</strong> (<em>Event-Driven Control Plane +
-Synchronous Orchestration Hub</em>). Ce choix répond à une tension fondamentale du
-domaine : les métriques doivent circuler vite et peuvent tolérer la perte, tandis que
-les incidents exigent une cohérence immédiate.</p>
-
-<div class="cardrow">
-  <div class="card"><b>Flux asynchrone</b><br><span class="small">Métriques et événements
-  transitent par Redis Pub/Sub. Perte tolérée, agrégation différée, débit privilégié.</span></div>
-  <div class="card"><b>Flux synchrone</b><br><span class="small">Incidents et mises à jour
-  Kong sont coordonnés en bloquant : pas de cohérence éventuelle, retour immédiat.</span></div>
-  <div class="card"><b>Découplage modulaire</b><br><span class="small">Chaque module NestJS
-  est autonome et communique via un EventBus, ce qui permet le travail parallèle des 6 développeurs.</span></div>
-</div>
-
-<h3>Les cinq décisions d'architecture structurantes</h3>
-<table>
-<thead><tr><th style="width:5%">#</th><th style="width:30%">Décision</th><th>Justification</th></tr></thead>
-<tbody>
-<tr><td>1</td><td><strong>Kong en data plane, Sentinel en control plane</strong></td><td>Kong gère le routage HTTP éprouvé ; Sentinel se concentre sur l'intelligence. Économise 30-40 % d'effort d'ingénierie.</td></tr>
-<tr><td>2</td><td><strong>Ségrégation des protocoles par cas d'usage</strong></td><td>Chaque protocole est optimisé pour un motif d'accès précis : REST pour le CRUD, GraphQL pour l'analytique, SSE pour le flux, WebSocket pour la collaboration, Webhook pour l'événementiel sortant.</td></tr>
-<tr><td>3</td><td><strong>Métriques événementielles, incidents synchrones</strong></td><td>Les métriques sont agrégées et peuvent être lossy ; les incidents requièrent un retour immédiat aux admins.</td></tr>
-<tr><td>4</td><td><strong>PostgreSQL durable + Redis éphémère</strong></td><td>La configuration exige l'ACID ; les métriques admettent la cohérence éventuelle. Améliore le débit de 60-80 %.</td></tr>
-<tr><td>5</td><td><strong>Salle d'incident = machine à états WebSocket</strong></td><td>État central de l'incident, collaboration temps réel, mises à jour de fallback synchrones évitant les conditions de course.</td></tr>
-</tbody>
-</table>
-</section>
-
-<section>
-<h2 id="sect-2-2">2.2 — Architecture système globale</h2>
+<span class="slide-tag">Slide 06</span>
+<h2 id="sect-2-1">2.1 — Vue d'ensemble système</h2>
 <div class="diagram">
 <pre class="mermaid">
-flowchart TB
-  subgraph CLIENT[" "]
-    APP["Clients / Applications"]
-  end
-  subgraph ECO["SENTINEL ECOSYSTEM"]
-    KONG["Kong Gateway<br/>Data Plane<br/>routing - proxy - LB"]
-    subgraph CORE["Sentinel Core - Control Plane - NestJS"]
-      CFG["Config API"]
-      SYNC["Gateway Sync"]
-      MET["Metrics Engine"]
-      RT["Realtime Gateway"]
-      GQL["GraphQL API"]
-      INC["Incident Engine"]
-    end
-  end
-  PG[("PostgreSQL<br/>source of truth")]
-  RDS[("Redis<br/>cache - pub/sub")]
-  UP["Upstream APIs<br/>OpenAI - Gemini - Stripe"]
-  DASH["Frontend Dashboard<br/>React"]
-  EXT["External Systems<br/>Slack - Discord - PagerDuty"]
+flowchart LR
+  ADMIN["Admin / Dashboard"]
+  META["Meta Messenger"]
+  EXT["Slack / Discord / Webhook"]
 
-  APP -->|HTTP| KONG
+  subgraph DOCKER["docker-compose"]
+    KONG["Kong 3.9<br/>proxy + admin API"]
+    KDB[("Kong DB<br/>Postgres 15")]
+    PROM["Prometheus<br/>scrape kong:8001"]
+    CORE["sentinel-core<br/>NestJS app"]
+    SDB[("Sentinel DB<br/>Postgres 15")]
+    BAD["Bad services<br/>limit-exceeded / provider-dead"]
+  end
+
+  UP["Upstream APIs"]
+
+  ADMIN -->|REST + GraphQL + WS + SSE| CORE
+  ADMIN -->|HTTP proxified| KONG
   KONG -->|route| UP
-  KONG -->|logs HTTP| MET
-  SYNC <-->|Admin API| KONG
-  CORE <-->|config / state| PG
-  CORE <-->|cache / pubsub| RDS
-  RT -->|SSE / WebSocket| DASH
-  GQL -->|GraphQL| DASH
-  CFG -->|REST| DASH
-  INC -->|Webhook| EXT
-  MET -.->|events| RT
-  INC -.->|events| RT
+  KONG -->|route| BAD
+  KONG -->|/metrics| PROM
+  KONG <-->|Admin API| CORE
+  KONG --- KDB
+  CORE --- SDB
+  CORE -->|PromQL| PROM
+  CORE -->|HMAC signed POST| EXT
+  META -->|callback| CORE
 </pre>
-<div class="cap">Figure 1 — Vue d'ensemble : Kong route le trafic, Sentinel observe et orchestre.</div>
+<div class="cap">Figure 1 — Composants Docker, flux d'admin, flux d'observation et flux de notification.</div>
 </div>
-<p class="small">Le client n'interagit jamais directement avec Sentinel pour le trafic
-applicatif : il passe par Kong. Sentinel reçoit les <em>journaux</em> de Kong, pilote sa
-configuration via l'Admin API, et expose ses propres APIs (REST, GraphQL, SSE, WebSocket)
-au tableau de bord. Les webhooks sortants alimentent les systèmes externes.</p>
+<div class="cardrow">
+  <div class="card"><b>Source de vérité</b>La configuration Kong est l'autorité ; Sentinel s'aligne via l'Admin API.</div>
+  <div class="card"><b>Métriques</b>Prometheus scrape Kong ; Sentinel pose des PromQL pour exploiter les compteurs.</div>
+  <div class="card"><b>Notifications</b>Sentinel pousse vers Slack, Discord ou tout endpoint <code>GENERIC</code>.</div>
+</div>
 </section>
 
 <section>
-<h2 id="sect-2-3">2.3 — Architecture en couches</h2>
-<p>La responsabilité est stratifiée en cinq couches. Une couche ne dépend que de la couche
-immédiatement inférieure ou de l'EventBus transverse.</p>
-<table>
-<thead><tr><th style="width:8%">Couche</th><th style="width:24%">Nom</th><th>Rôle</th></tr></thead>
-<tbody>
-<tr><td><strong>L1</strong></td><td>API Gateway (Kong)</td><td>Routage HTTP, authentification de bord, <em>rate limiting</em>, transfert vers les <em>upstreams</em>.</td></tr>
-<tr><td><strong>L2</strong></td><td>Control Plane (Sentinel)</td><td>Configuration, collecte de métriques, gestion des incidents, coordination des événements.</td></tr>
-<tr><td><strong>L3</strong></td><td>Temps réel</td><td>SSE, WebSocket, Redis Pub/Sub : diffusion des métriques et coordination des incidents.</td></tr>
-<tr><td><strong>L4</strong></td><td>Analytique</td><td>API GraphQL : requêtes complexes pour les tableaux de bord.</td></tr>
-<tr><td><strong>L5</strong></td><td>Présentation</td><td>SPA React : rendu de l'interface, gestion de l'état client.</td></tr>
-</tbody>
-</table>
-<div class="box info"><p class="small"><strong>Règle de dépendance.</strong> Le code métier
-(couche L2) ne référence jamais Kong directement : il passe par la librairie
-<code>kong-adapter</code>. Cela empêche la logique spécifique à Kong de « fuir » dans les
-services métier (principe d'inversion de dépendance).</p></div>
-</section>
+<span class="slide-tag">Slide 07</span>
+<h2 id="sect-2-2">2.2 — Découpage du projet</h2>
+<p>Sentinel est implémenté en <strong>application NestJS unique</strong>
+(<code>sentinel-core</code>), complétée par un frontend React + Vite dédié à la salle
+d'incident (<code>incident-room</code>), compilé puis servi statiquement par NestJS
+sous <code>sentinel-core/public/</code>.</p>
 
-<section>
-<h2 id="sect-2-4">2.4 — Découpage du monorepo NestJS</h2>
-<p>Sentinel est implémenté en <strong>monorepo NestJS</strong> géré par Nx. Le monorepo
-sépare les <em>applications</em> déployables (<code>apps/</code>) des <em>librairies</em>
-partagées et réutilisables (<code>libs/</code>). Ce découpage est aligné sur la répartition
-des 6 développeurs : chacun possède une ou plusieurs applications et les librairies associées.</p>
-
-<h3>Applications déployables</h3>
+<h3>Composants déployables</h3>
 <table>
-<thead><tr><th style="width:22%">Application</th><th>Responsabilité</th><th style="width:14%">Protocole</th><th style="width:10%">Owner</th></tr></thead>
+<thead><tr><th style="width:22%">Composant</th><th>Responsabilité</th><th style="width:24%">Stack</th></tr></thead>
 <tbody>
-<tr><td><code>config-api</code></td><td>API REST de configuration : CRUD providers, services, budgets, fallbacks, webhooks ; gestion des secrets ; authentification JWT.</td><td>REST</td><td>P2</td></tr>
-<tr><td><code>gateway-sync</code></td><td>Synchronisation Sentinel → Kong : pousse routes et upstreams, applique les fallbacks, polling de l'état Kong.</td><td>HTTP (Admin API)</td><td>P1</td></tr>
-<tr><td><code>metrics-engine</code></td><td>Ingestion des logs Kong, calcul des coûts, détection d'erreurs et de prompts répétés, agrégation.</td><td>Webhook entrant</td><td>P3</td></tr>
-<tr><td><code>realtime-gateway</code></td><td>Diffusion SSE des métriques, salle d'incident WebSocket, distribution des événements.</td><td>SSE + WebSocket</td><td>P4</td></tr>
-<tr><td><code>graphql-api</code></td><td>API GraphQL analytique : résolveurs, agrégations, DataLoader.</td><td>GraphQL</td><td>P5</td></tr>
-<tr><td><code>frontend</code></td><td>Tableau de bord React (Vite) : monitoring, configuration, salle d'incident.</td><td>Consommateur</td><td>P6</td></tr>
-</tbody>
-</table>
-
-<h3>Librairies partagées</h3>
-<table>
-<thead><tr><th style="width:20%">Librairie</th><th>Responsabilité</th><th style="width:24%">Consommée par</th></tr></thead>
-<tbody>
-<tr><td><code>kong-adapter</code></td><td>Encapsule l'Admin API de Kong (services, routes, upstreams, fallback). Patron Adapter.</td><td>gateway-sync, realtime-gateway</td></tr>
-<tr><td><code>event-bus</code></td><td>Bus d'événements global : EventEmitter2 local + Redis Pub/Sub inter-instances.</td><td>Toutes les applications</td></tr>
-<tr><td><code>database</code></td><td>Entités TypeORM, repositories génériques, migrations, connexion PostgreSQL.</td><td>config-api, metrics-engine, graphql-api, realtime-gateway</td></tr>
-<tr><td><code>shared-types</code></td><td>Interfaces et DTO TypeScript partagés (contrats inter-modules).</td><td>Toutes les applications + frontend</td></tr>
-<tr><td><code>auth</code></td><td>Stratégie JWT, guards NestJS, décorateurs.</td><td>config-api, realtime-gateway, graphql-api</td></tr>
-<tr><td><code>secrets</code></td><td>Chiffrement / déchiffrement AES-256-GCM des secrets.</td><td>config-api</td></tr>
-<tr><td><code>analytics</code></td><td>Logique de calcul des coûts (stratégies par provider), agrégation, détection de prompts.</td><td>metrics-engine, graphql-api</td></tr>
-<tr><td><code>incidents</code></td><td>Machine à états des incidents, journalisation, règles de détection.</td><td>realtime-gateway, metrics-engine</td></tr>
-<tr><td><code>websocket</code></td><td>Infrastructure des gateways Socket.io (rooms, présence, auth).</td><td>realtime-gateway</td></tr>
-<tr><td><code>sse</code></td><td>Infrastructure du streaming Server-Sent Events.</td><td>realtime-gateway</td></tr>
+<tr><td><code>sentinel-core</code></td><td>API NestJS unifiée : REST, GraphQL, WebSocket incident room, SSE incident, polling Prometheus, fan-out webhooks.</td><td>NestJS 11 · Apollo · Socket.io · TypeORM</td></tr>
+<tr><td><code>incident-room</code></td><td>Mini-SPA React + Vite consommant <code>/incident-room</code> Socket.io ; build injecté dans <code>sentinel-core/public/incident-room/</code>.</td><td>React · Vite · Socket.io client</td></tr>
+<tr><td><code>kong</code></td><td>Conteneur Kong 3.9.1 (DB Postgres) avec plugin Prometheus bundled, config <code>kong.yaml</code> appliquée par <code>kong/deck</code>.</td><td>Kong + Postgres 15</td></tr>
+<tr><td><code>prometheus</code></td><td>Scrape <code>kong:8001/metrics</code> toutes les 15 s, règles d'agrégation dans <code>rules.yml</code>.</td><td>Prometheus</td></tr>
+<tr><td><code>sentinel-database</code></td><td>Postgres 15 dédié, autoload des entités TypeORM, <code>synchronize: true</code>.</td><td>Postgres 15</td></tr>
+<tr><td><code>limit-exceeded</code> · <code>provider-dead</code></td><td>Mock services Node simulant erreurs / pannes, pour reproduire des incidents en démo.</td><td>Node 18</td></tr>
 </tbody>
 </table>
 </section>
 
 <section class="page-break">
-<h2 id="sect-2-5">2.5 — Hiérarchie complète du projet</h2>
-<p>Arborescence cible du monorepo. Les applications suivent toutes le même découpage en
-couches NestJS : <code>module → controller / gateway / resolver → service → repository</code>.</p>
-<pre><span class="c"># Monorepo NestJS — géré par Nx</span>
+<span class="slide-tag">Slide 08</span>
+<h2 id="sect-2-3">2.3 — Hiérarchie complète</h2>
+<pre><span class="c"># Arborescence réelle du dépôt</span>
 sentinel-gateway/
-├── apps/
-│   ├── <span class="k">config-api/</span>                  <span class="c"># P2 — REST API de configuration</span>
-│   │   └── src/
-│   │       ├── main.ts
-│   │       ├── app.module.ts
-│   │       ├── providers/
-│   │       │   ├── providers.module.ts
-│   │       │   ├── providers.controller.ts
-│   │       │   ├── providers.service.ts
-│   │       │   ├── providers.repository.ts
-│   │       │   ├── dto/            <span class="c"># create-provider.dto.ts, update-provider.dto.ts</span>
-│   │       │   └── interfaces/     <span class="c"># IProvider</span>
-│   │       ├── services/          <span class="c"># même structure (module/controller/service/repo/dto)</span>
-│   │       ├── budgets/
-│   │       ├── fallback/
-│   │       ├── webhooks/
-│   │       ├── common/
-│   │       │   ├── guards/         <span class="c"># jwt-auth.guard.ts</span>
-│   │       │   ├── interceptors/   <span class="c"># logging, transform</span>
-│   │       │   ├── filters/        <span class="c"># http-exception.filter.ts</span>
-│   │       │   └── validators/     <span class="c"># Joi / class-validator schemas</span>
-│   │       └── config/
-│   │
-│   ├── <span class="k">gateway-sync/</span>                <span class="c"># P1 — Synchronisation vers Kong</span>
-│   │   └── src/
-│   │       ├── main.ts
-│   │       ├── kong/
-│   │       │   ├── kong-sync.module.ts
-│   │       │   ├── kong-sync.controller.ts
-│   │       │   ├── kong-admin.service.ts
-│   │       │   └── kong-poller.service.ts   <span class="c"># polling 30 s</span>
-│   │       └── fallback/
-│   │           └── fallback-engine.service.ts
-│   │
-│   ├── <span class="k">metrics-engine/</span>              <span class="c"># P3 — Métriques &amp; coûts</span>
-│   │   └── src/
-│   │       ├── main.ts
-│   │       ├── ingestion/
-│   │       │   ├── ingestion.controller.ts  <span class="c"># reçoit les logs Kong</span>
-│   │       │   └── log-processor.service.ts
-│   │       ├── cost/
-│   │       │   ├── cost-calculator.service.ts
-│   │       │   └── strategies/    <span class="c"># openai.strategy.ts, gemini.strategy.ts</span>
-│   │       ├── prompt-analysis/
-│   │       │   └── prompt-hash.service.ts
-│   │       └── aggregation/
-│   │           └── metrics-aggregator.service.ts   <span class="c"># cron</span>
-│   │
-│   ├── <span class="k">realtime-gateway/</span>            <span class="c"># P4 — SSE + WebSocket + incidents</span>
-│   │   └── src/
-│   │       ├── main.ts
-│   │       ├── sse/
-│   │       │   └── metrics-sse.controller.ts        <span class="c"># @Sse()</span>
-│   │       ├── websocket/
-│   │       │   └── incident.gateway.ts              <span class="c"># @WebSocketGateway()</span>
-│   │       └── incidents/
-│   │           ├── incident.service.ts
-│   │           └── incident.repository.ts
-│   │
-│   ├── <span class="k">graphql-api/</span>                 <span class="c"># P5 — Analytique GraphQL</span>
-│   │   └── src/
-│   │       ├── main.ts
-│   │       ├── schema.gql
-│   │       ├── resolvers/         <span class="c"># service, provider, analytics, incident resolvers</span>
-│   │       ├── dataloaders/       <span class="c"># provider.loader.ts</span>
-│   │       └── analytics/
-│   │           └── analytics.service.ts
-│   │
-│   └── <span class="k">frontend/</span>                    <span class="c"># P6 — Dashboard React (Vite)</span>
-│       └── src/
-│           ├── pages/             <span class="c"># dashboard, services, providers, analytics, incident-room</span>
-│           ├── components/        <span class="c"># charts, cards, incident widgets</span>
-│           ├── services/          <span class="c"># apollo client, sse client, socket client</span>
-│           └── hooks/
+├── <span class="k">sentinel-core/</span>                    <span class="c"># Application NestJS unique</span>
+│   ├── src/
+│   │   ├── main.ts
+│   │   ├── app.module.ts
+│   │   ├── <span class="k">auth/</span>                     <span class="c"># JWT, guard, secret CEO</span>
+│   │   ├── <span class="k">users/</span>                    <span class="c"># entité User TypeORM</span>
+│   │   ├── <span class="k">gateway/</span>                  <span class="c"># Kong Admin API via hey-api SDK</span>
+│   │   │   ├── dto/                  <span class="c"># service / route / plugin / consumer</span>
+│   │   │   ├── entities/
+│   │   │   └── kong-client/          <span class="c"># client généré</span>
+│   │   ├── <span class="k">metrics/</span>                  <span class="c"># Prometheus polling + cache</span>
+│   │   │   ├── metrics.service.ts
+│   │   │   ├── prometheus.service.ts
+│   │   │   ├── events/               <span class="c"># metrics.updated, health.changed…</span>
+│   │   │   └── types/
+│   │   ├── <span class="k">monitoring/</span>               <span class="c"># règles &amp; anomalies</span>
+│   │   │   ├── monitoring.controller.ts
+│   │   │   ├── monitoring.service.ts
+│   │   │   ├── dto/                  <span class="c"># create / update rule</span>
+│   │   │   ├── entities/             <span class="c"># MonitoringRule</span>
+│   │   │   ├── enums/
+│   │   │   ├── events/               <span class="c"># threshold-exceeded.event</span>
+│   │   │   └── interfaces/
+│   │   ├── <span class="k">incidents/</span>                <span class="c"># historique &amp; salle WebSocket</span>
+│   │   │   ├── incidents.controller.ts
+│   │   │   ├── incidents.service.ts
+│   │   │   ├── incident-room.gateway.ts
+│   │   │   ├── dto/
+│   │   │   ├── entities/             <span class="c"># Incident, IncidentLog</span>
+│   │   │   └── enum/
+│   │   ├── <span class="k">webhooks/</span>                 <span class="c"># Slack / Discord / Generic</span>
+│   │   │   ├── webhooks.controller.ts
+│   │   │   ├── webhook-deliveries.controller.ts
+│   │   │   ├── webhooks.service.ts
+│   │   │   ├── webhooks.repository.ts
+│   │   │   ├── formatters/           <span class="c"># slack / discord / generic + factory</span>
+│   │   │   ├── guards/               <span class="c"># webhook-admin.guard</span>
+│   │   │   ├── listeners/            <span class="c"># incident-created.listener</span>
+│   │   │   ├── events/
+│   │   │   └── types/
+│   │   ├── <span class="k">messenger/</span>                <span class="c"># callback Meta Messenger entrant</span>
+│   │   │   ├── messenger-webhook.controller.ts
+│   │   │   ├── messenger-webhook.service.ts
+│   │   │   ├── messenger-events.repository.ts
+│   │   │   ├── dto/
+│   │   │   └── types/
+│   │   ├── <span class="k">graphql/</span>                  <span class="c"># Apollo + résolveur agrégé</span>
+│   │   └── <span class="k">common/</span>                   <span class="c"># GenericService, notification, sanitize</span>
+│   ├── docs/                         <span class="c"># documentation par module</span>
+│   ├── public/                       <span class="c"># incident-room compilé</span>
+│   ├── bad-services/                 <span class="c"># mocks de panne (limit-exceeded, provider-dead)</span>
+│   └── package.json
 │
-├── libs/
-│   ├── <span class="k">kong-adapter/</span>      <span class="c"># Adapter Admin API Kong</span>
-│   ├── <span class="k">event-bus/</span>         <span class="c"># EventEmitter2 + Redis Pub/Sub</span>
-│   ├── <span class="k">database/</span>          <span class="c"># entities TypeORM, repositories génériques, migrations</span>
-│   ├── <span class="k">shared-types/</span>      <span class="c"># interfaces &amp; DTO partagés</span>
-│   ├── <span class="k">auth/</span>              <span class="c"># JWT strategy, guards</span>
-│   ├── <span class="k">secrets/</span>           <span class="c"># chiffrement AES-256-GCM</span>
-│   ├── <span class="k">analytics/</span>         <span class="c"># calcul coûts, agrégation</span>
-│   ├── <span class="k">incidents/</span>         <span class="c"># state machine incident</span>
-│   ├── <span class="k">websocket/</span>         <span class="c"># infra Socket.io</span>
-│   └── <span class="k">sse/</span>               <span class="c"># infra SSE</span>
+├── <span class="k">incident-room/</span>                    <span class="c"># Frontend React + Vite</span>
+│   ├── src/{App.tsx,main.tsx,styles.css}
+│   └── vite.config.ts
 │
-├── infrastructure/
-│   ├── docker/           <span class="c"># Dockerfiles</span>
-│   ├── kong/             <span class="c"># kong.yml, plugins</span>
-│   ├── postgres/         <span class="c"># init scripts</span>
-│   └── redis/
-│
-├── docs/                 <span class="c"># architecture, API, runbooks</span>
-├── scripts/              <span class="c"># seed, demo simulator</span>
-├── .env.example
-├── docker-compose.yml
-├── nx.json
-└── package.json
+├── docker-compose.yml                <span class="c"># Kong + Postgres × 2 + Prometheus + sentinel + bad-services</span>
+├── kong.yaml                         <span class="c"># config Kong déclarative (plugin prometheus)</span>
+├── prometheus.yml                    <span class="c"># scrape kong:8001/metrics</span>
+├── rules.yml                         <span class="c"># records agrégés (rate5m, errors:rate5m, latency:p95)</span>
+└── README.md
 </pre>
 <div class="box"><p class="small"><strong>Convention.</strong> Modules NestJS en
-<code>PascalCase</code> (<code>ProvidersModule</code>), fichiers en <code>kebab-case</code>
-(<code>providers.service.ts</code>), un dossier par sous-domaine fonctionnel. Chaque
-application est buildable et déployable indépendamment via <code>nx build &lt;app&gt;</code>.</p></div>
+<code>PascalCase</code>, fichiers en <code>kebab-case</code>, un dossier par sous-domaine
+fonctionnel. La salle d'incident React est compilée et injectée dans
+<code>sentinel-core/public/</code> via <code>npm run generate:incident-room</code>.</p></div>
 </section>
 
 <section>
-<h2 id="sect-2-6">2.6 — Modules NestJS et responsabilités</h2>
-<p>Au sein des applications, le code est organisé en modules NestJS fonctionnels. Chaque
-module est indépendant et communique avec les autres exclusivement par l'EventBus.</p>
+<span class="slide-tag">Slide 09</span>
+<h2 id="sect-2-4">2.4 — Modules NestJS et responsabilités</h2>
+<p>Les modules sont indépendants et communiquent par
+<code>@nestjs/event-emitter</code>. Chacun publie ses providers via son module NestJS ;
+la documentation détaillée vit dans <code>sentinel-core/docs/</code>.</p>
 <table>
-<thead><tr><th style="width:21%">Module</th><th>Responsabilité</th><th style="width:22%">Patterns</th></tr></thead>
+<thead><tr><th style="width:22%">Module</th><th>Responsabilité</th><th style="width:18%">Persistance</th></tr></thead>
 <tbody>
-<tr><td><code>KongModule</code></td><td>Wrapper de l'Admin API Kong (services, routes, fallback dynamique).</td><td>Adapter, Retry</td></tr>
-<tr><td><code>ProviderModule</code></td><td>CRUD des providers, chiffrement AES-256-GCM des secrets.</td><td>Repository, Encryption</td></tr>
-<tr><td><code>ServiceModule</code></td><td>Services métier et liaison avec les providers.</td><td>Repository</td></tr>
-<tr><td><code>BudgetModule</code></td><td>Seuils mensuels, alertes de budget.</td><td>Observer</td></tr>
-<tr><td><code>FallbackModule</code></td><td>Règles de fallback, moteur de basculement.</td><td>Strategy, Repository</td></tr>
-<tr><td><code>WebhookModule</code></td><td>Enregistrement et dispatch des webhooks (Slack, Discord).</td><td>Observer, Retry</td></tr>
-<tr><td><code>MetricsIngestionModule</code></td><td>Réception des logs Kong, parsing, stockage brut.</td><td>Pipeline, Factory</td></tr>
-<tr><td><code>CostCalculationModule</code></td><td>Calcul du coût LLM par provider (tokens → $).</td><td>Strategy</td></tr>
-<tr><td><code>PromptAnalysisModule</code></td><td>Détection des prompts répétés, estimation du gaspillage.</td><td>Repository, Hashing</td></tr>
-<tr><td><code>AggregationModule</code></td><td>Jobs cron : p95, taux d'erreur, coûts agrégés.</td><td>Scheduler</td></tr>
-<tr><td><code>IncidentModule</code></td><td>Cycle de vie des incidents (création, logs, résolution).</td><td>State Machine</td></tr>
-<tr><td><code>RealtimeModule</code></td><td>SSE des métriques + WebSocket (salle d'incident).</td><td>Pub/Sub, Observer</td></tr>
-<tr><td><code>GraphQLModule</code></td><td>API analytique flexible, résolveurs optimisés.</td><td>Resolver, DataLoader</td></tr>
-<tr><td><code>AuthModule</code></td><td>Authentification JWT (guard).</td><td>JWT, Guard</td></tr>
-<tr><td><code>EventBusModule</code></td><td>Bus global d'événements (local + Redis).</td><td>Observer, Pub/Sub</td></tr>
-<tr><td><code>SharedModule</code></td><td>Entités, repositories génériques, DTO.</td><td>—</td></tr>
+<tr><td><code>GatewayModule</code></td><td>Wrapper de l'Admin API Kong (services, routes, plugins, consumers) via SDK généré <code>kong-client</code>.</td><td>Kong (externe)</td></tr>
+<tr><td><code>MetricsModule</code></td><td>Polling Prometheus toutes les 15 s, cache par scope, détection naïve de santé (≥ 10 fenêtres consécutives avec 5xx / 429 → service dégradé). Émet <code>metrics.updated</code>, <code>metrics.poll.failed</code>, <code>health.changed</code>.</td><td>Mémoire</td></tr>
+<tr><td><code>MonitoringModule</code></td><td>CRUD de règles (<code>ERROR_RATE</code>, <code>LATENCY_P95</code>, <code>UPSTREAM_HEALTH</code>), checks planifiés et manuels, cooldown par règle. Émet <code>monitoring.threshold.exceeded</code>.</td><td>Postgres</td></tr>
+<tr><td><code>IncidentsModule</code></td><td>Création d'incident sur <code>monitoring.threshold.exceeded</code>, salle WebSocket <code>/incident-room</code>, journal d'actions, snapshot SSE. Émet <code>incident.created</code>.</td><td>Postgres</td></tr>
+<tr><td><code>WebhooksModule</code></td><td>Façade sortante Generic / Discord / Slack via formatters dédiés, signature HMAC optionnelle, retries avec backoff, deliveries journalisées. Listener <code>incident-created</code>.</td><td>Mémoire</td></tr>
+<tr><td><code>MessengerModule</code></td><td>Callback Meta entrant : vérification du token, stockage des événements et PSIDs.</td><td>Mémoire</td></tr>
+<tr><td><code>SentinelGraphqlModule</code></td><td>Schéma Apollo unique exposant gateway, monitoring, incidents, métriques, webhooks et messenger.</td><td>—</td></tr>
+<tr><td><code>AuthModule</code></td><td>JWT (Passport), guard, <code>CeoSecretService</code> pour les actions de désactivation.</td><td>Postgres</td></tr>
+<tr><td><code>UsersModule</code></td><td>Référentiel des admins (email, mot de passe haché, rôle, statut).</td><td>Postgres</td></tr>
+<tr><td><code>CommonModule</code></td><td>Services transverses : <code>GenericService</code>, notifications, sanitisation.</td><td>—</td></tr>
+</tbody>
+</table>
+<div class="box info"><p class="small"><strong>Chaîne nominale.</strong>
+<code>Prometheus → MetricsModule → MonitoringModule → IncidentsModule → WebhooksModule</code>.
+Aucun module n'appelle directement le service d'un autre : ils s'écoutent via
+<code>EventEmitter2</code>.</p></div>
+</section>
+
+<section>
+<span class="slide-tag">Slide 10</span>
+<h2 id="sect-2-5">2.5 — Architecture événementielle</h2>
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  PROM["Prometheus"] -->|PromQL| MET["MetricsService<br/>poll 15s"]
+  MET -->|metrics.updated| BUS{{"EventEmitter2"}}
+  MET -->|health.changed| BUS
+  MET -->|metrics.poll.failed| BUS
+  MON["MonitoringService<br/>scheduled checks"] -->|reads| MET
+  MON -->|monitoring.threshold.exceeded| BUS
+  BUS --> INC["IncidentsService<br/>listener"]
+  INC -->|incident.created| BUS
+  BUS --> WS["IncidentRoomGateway<br/>WebSocket"]
+  BUS --> SSE["IncidentsController<br/>SSE /incidents/sse"]
+  BUS --> WH["IncidentCreatedListener<br/>fan-out"]
+  WH --> SLACK["Slack formatter"]
+  WH --> DISC["Discord formatter"]
+  WH --> GEN["Generic + HMAC"]
+</pre>
+<div class="cap">Figure 2 — Flux d'événements internes via <code>@nestjs/event-emitter</code>.</div>
+</div>
+<h3>Catalogue des événements de domaine</h3>
+<table>
+<thead><tr><th style="width:28%">Événement</th><th>Émis par</th><th>Consommé par</th></tr></thead>
+<tbody>
+<tr><td><code>metrics.updated</code></td><td><code>MetricsService.pollAll</code></td><td>(consommateurs internes/futurs)</td></tr>
+<tr><td><code>metrics.poll.failed</code></td><td><code>MetricsService.pollAll</code></td><td>Logs ; futurs incidents d'infra</td></tr>
+<tr><td><code>health.changed</code></td><td><code>MetricsService.updateServiceHealth</code></td><td>Dashboard ; alertes</td></tr>
+<tr><td><code>monitoring.threshold.exceeded</code></td><td><code>MonitoringService.runChecks</code></td><td><code>IncidentsService</code></td></tr>
+<tr><td><code>incident.created</code></td><td><code>IncidentsService</code></td><td><code>IncidentCreatedListener</code> (webhooks) · <code>IncidentsController.sse</code> · WebSocket gateway</td></tr>
 </tbody>
 </table>
 </section>
 
 <section class="page-break">
-<h2 id="sect-2-7">2.7 — Modèle de domaine et diagramme de classes</h2>
-<p>Le modèle de domaine est organisé autour de trois agrégats : <strong>Service</strong>
-(service + providers liés + règles de fallback + budget), <strong>Incident</strong>
-(incident + journal d'actions), et <strong>Provider</strong> (provider + agrégats de coûts).</p>
-
-<h3>Entités du domaine</h3>
-<table>
-<thead><tr><th style="width:16%">Entité</th><th>Description</th><th style="width:26%">Invariant clé</th></tr></thead>
-<tbody>
-<tr><td><code>Provider</code></td><td>API externe ou interne (OpenAI, Gemini, Stripe, auth-service).</td><td>Jamais supprimé physiquement ; secret immuable.</td></tr>
-<tr><td><code>Service</code></td><td>Composant applicatif consommant des providers (chat-service…).</td><td>Au plus un provider primaire.</td></tr>
-<tr><td><code>ServiceProvider</code></td><td>Association service ↔ provider avec priorité et drapeau primaire.</td><td>Unicité (service, is_primary=true).</td></tr>
-<tr><td><code>FallbackRule</code></td><td>Règle liant un provider primaire à des providers de repli.</td><td>Le primaire doit déjà exister dans le service.</td></tr>
-<tr><td><code>ApiCall</code></td><td>Enregistrement d'un appel API (latence, statut, tokens, coût).</td><td>Immuable après création.</td></tr>
-<tr><td><code>ErrorEvent</code></td><td>Erreur classifiée rattachée à un ApiCall.</td><td>Toujours liée à un ApiCall.</td></tr>
-<tr><td><code>Incident</code></td><td>Événement de panne (provider down, timeout, budget dépassé).</td><td>OPEN → ACKNOWLEDGED → RESOLVED, non réouvrable.</td></tr>
-<tr><td><code>IncidentLog</code></td><td>Action journalisée au sein d'un incident.</td><td>Append-only.</td></tr>
-<tr><td><code>RepeatedPrompt</code></td><td>Prompt détecté comme répété, avec gaspillage estimé.</td><td>Identifié par son hash SHA-256.</td></tr>
-<tr><td><code>MetricsAggregate</code></td><td>Résumé horaire (p95, taux d'erreur, coût) par service / provider.</td><td>Unicité (service, provider, hour_bucket).</td></tr>
-<tr><td><code>Webhook</code></td><td>Abonnement à un type d'événement avec URL et politique de retry.</td><td>Charge signée HMAC.</td></tr>
-<tr><td><code>Admin</code></td><td>Acteur unique authentifié de la plateforme.</td><td>Identité portée par le JWT.</td></tr>
-</tbody>
-</table>
-
+<span class="slide-tag">Slide 11</span>
+<h2 id="sect-2-6">2.6 — Modèle de domaine</h2>
+<p>Le modèle est volontairement minimal : les entités réellement persistées sont
+celles présentes dans <code>src/**/entities/</code>. Les webhooks et événements
+Messenger vivent en mémoire (V1).</p>
 <div class="diagram">
 <pre class="mermaid">
 classDiagram
   direction LR
-  class Provider {
+  class User {
+    +UUID id
+    +string email
+    +string fullName
+    +string passwordHash
+    +UserRole role
+    +UserStatus status
+    +datetime createdAt
+    +datetime updatedAt
+  }
+  class MonitoringRule {
     +UUID id
     +string name
-    +ProviderType type
-    +string baseUrl
-    +AuthType authType
-    +string secretEncrypted
-    +decimal monthlyBudgetUsd
+    +string serviceName
+    +UUID providerId
+    +MonitoringRuleType type
+    +decimal errorRateThreshold
+    +int latencyThresholdMs
+    +string metricWindow
+    +int cooldownMinutes
     +bool isActive
-    +estimateCost(tokens) decimal
-    +isWithinBudget(cost) bool
-  }
-  class Service {
-    +UUID id
-    +string name
-    +string team
-    +decimal monthlyBudgetUsd
-    +getPrimaryProvider() Provider
-    +getRemainingBudget() decimal
-  }
-  class ServiceProvider {
-    +UUID id
-    +bool isPrimary
-    +int priorityOrder
-  }
-  class FallbackRule {
-    +UUID id
-    +UUID primaryProviderId
-    +UUID[] fallbackProviderIds
-    +TriggerType[] triggerOn
-  }
-  class ApiCall {
-    +UUID id
-    +string endpoint
-    +int latencyMs
-    +int statusCode
-    +int tokensInput
-    +int tokensOutput
-    +decimal costUsd
-    +datetime timestamp
-    +isError() bool
-    +isTimeout() bool
-  }
-  class ErrorEvent {
-    +UUID id
-    +ErrorType errorType
-    +datetime timestamp
+    +IncidentSeverity severity
+    +datetime lastTriggeredAt
   }
   class Incident {
     +UUID id
-    +Severity severity
+    +UUID serviceId
+    +UUID providerId
+    +IncidentSeverity severity
     +string reason
     +IncidentStatus status
-    +acknowledge(adminId, notes)
-    +activateFallback(toProviderId)
-    +resolve()
+    +datetime createdAt
+    +datetime resolvedAt
+    +acknowledge(adminId)
+    +resolve(adminId)
   }
   class IncidentLog {
-    +UUID id
+    +int id
+    +UUID incidentId
     +string adminId
-    +string action
-    +datetime timestamp
-  }
-  class RepeatedPrompt {
-    +string promptHash
-    +int count
-    +decimal estimatedWasteUsd
-  }
-  class MetricsAggregate {
-    +datetime hourBucket
-    +int latencyP95Ms
-    +decimal errorRate
-    +decimal costUsd
+    +string adminName
+    +IncidentLogAction action
+    +json details
+    +datetime createdAt
   }
   class Webhook {
-    +UUID id
-    +string eventType
-    +string url
-    +RetryPolicy retryPolicy
-  }
-  class Admin {
-    +UUID id
+    +string id
     +string name
+    +WebhookProvider provider
+    +string url
+    +string[] eventTypes
+    +bool isActive
+    +bool hasSecret
+    +int maxRetries
+  }
+  class WebhookDelivery {
+    +string id
+    +string webhookId
+    +WebhookEventType eventType
+    +string source
+    +json payload
+    +WebhookDeliveryStatus status
+    +int attemptCount
+    +int responseStatus
+    +int durationMs
+  }
+  class MessengerEvent {
+    +string id
+    +string senderId
+    +string recipientId
+    +string messageText
+    +datetime receivedAt
   }
 
-  Service "1" o-- "*" ServiceProvider
-  Provider "1" o-- "*" ServiceProvider
-  Service "1" o-- "*" FallbackRule
-  FallbackRule "*" --> "1" Provider : primary
-  Service "1" --> "*" ApiCall
-  Provider "1" --> "*" ApiCall
-  ApiCall "1" o-- "0..1" ErrorEvent
-  Service "1" --> "*" Incident
-  Provider "1" --> "*" Incident
   Incident "1" *-- "*" IncidentLog
-  Incident "*" --> "0..1" Provider : fallbackTo
-  Service "1" --> "*" RepeatedPrompt
-  Service "1" --> "*" MetricsAggregate
-  Admin "1" --> "*" IncidentLog : authors
+  MonitoringRule ..> Incident : triggers
+  Webhook "1" --> "*" WebhookDelivery
+  Incident ..> WebhookDelivery : INCIDENT_CREATED
 </pre>
-<div class="cap">Figure 2 — Diagramme de classes du modèle de domaine (entités persistantes).</div>
+<div class="cap">Figure 3 — Modèle de domaine réel (TypeORM + types en mémoire).</div>
 </div>
-<p class="small"><strong>Énumérations.</strong> <code>ProviderType</code> {llm, payment,
-internal} · <code>AuthType</code> {bearer, apiKey} · <code>TriggerType</code> {onError,
-onTimeout, onBudgetExceeded} · <code>ErrorType</code> {e401, e403, e429, e5xx, timeout} ·
-<code>Severity</code> {low, medium, high, critical} · <code>IncidentStatus</code> {open,
-acknowledged, resolved}.</p>
+<p class="small"><strong>Énumérations.</strong> <code>UserRole</code> · <code>UserStatus</code>
+· <code>MonitoringRuleType</code> {ERROR_RATE, LATENCY_P95, UPSTREAM_HEALTH} ·
+<code>IncidentSeverity</code> · <code>IncidentStatus</code> {OPEN, ACKNOWLEDGED, RESOLVED} ·
+<code>IncidentLogAction</code> · <code>WebhookProvider</code> {GENERIC, DISCORD, SLACK} ·
+<code>WebhookEventType</code> · <code>WebhookDeliveryStatus</code> {PENDING, SUCCESS, FAILED}.</p>
 </section>
 
 <section class="page-break">
-<h2 id="sect-2-8">2.8 — Diagramme de classes — couche applicative</h2>
-<p>La couche applicative suit le patron en couches de NestJS :
-<code>Controller / Gateway / Resolver → Service → Repository</code>. Le diagramme ci-dessous
-illustre une tranche verticale représentative (configuration des providers et moteur de
-fallback) ainsi que les composants transverses (EventBus, KongAdapter, CostCalculator).</p>
-
-<div class="diagram">
-<pre class="mermaid">
-graph LR
-  PC["ProvidersController<br/>create | findAll | update"]
-  PS["ProviderService<br/>createProvider<br/>updateBudget"]
-  PR["ProviderRepository<br/>findById | save"]
-  ES["EncryptionService<br/>encrypt | decrypt"]
-  FE["FallbackEngine<br/>executeFallback"]
-  KA["KongAdminService<br/>updateRouteFallback"]
-  CC["CostCalculator<br/>calculate"]
-  CS["ICostStrategy<br/>computeCost"]
-  EB["EventBus<br/>publish | subscribe"]
-  IS["IncidentService<br/>detectIncident<br/>acknowledge"]
-  IG["IncidentGateway<br/>WebSocket"]
-  
-  PC --> PS
-  PS --> PR
-  PS --> ES
-  PS --> EB
-  FE --> KA
-  FE --> EB
-  CC --> CS
-  IS --> EB
-  IG --> IS
-  IG --> EB
-</pre>
-<div class="cap">Figure 3 — Diagramme de classes de la couche applicative (tranche providers / fallback / incident).</div>
-</div>
-
-<div class="grid2">
-<div class="box">
-<h4>Lecture du diagramme</h4>
-<p class="small">Les contrôleurs, gateways et résolveurs ne portent aucune logique
-métier : ils délèguent aux <em>services</em>. Les services orchestrent <em>repositories</em>,
-librairies (<code>EncryptionService</code>, <code>KongAdminService</code>) et publient des
-événements sur l'<code>EventBus</code>. Les repositories isolent l'accès TypeORM.</p>
-</div>
-<div class="box info">
-<h4>Stratégie de coût (patron Strategy)</h4>
-<p class="small"><code>CostCalculator</code> sélectionne dynamiquement une
-<code>ICostStrategy</code> selon le provider. Ajouter un nouveau fournisseur LLM revient à
-ajouter une classe stratégie, sans modifier le calculateur (principe ouvert/fermé).</p>
-</div>
-</div>
-</section>
-
-<section>
-<h2 id="sect-2-9">2.9 — Architecture événementielle</h2>
-<p>L'EventBus est la colonne vertébrale du découplage. Un module publie un événement sans
-connaître ses consommateurs ; l'EventBus le distribue localement (EventEmitter2) et
-inter-instances (Redis Pub/Sub), puis vers SSE, WebSocket et webhooks.</p>
-
-<div class="diagram">
-<pre class="mermaid">
-flowchart LR
-  ING["MetricsIngestion<br/>(P3)"] -->|RawApiCallReceived| BUS{{"EventBus<br/>local + Redis Pub/Sub"}}
-  COST["CostCalculation<br/>(P3)"] -->|ApiCallProcessed| BUS
-  INC["IncidentEngine<br/>(P4)"] -->|IncidentCreated| BUS
-  FB["FallbackEngine<br/>(P1)"] -->|FallbackActivated| BUS
-  BUS --> SSE["SSE Stream<br/>dashboard"]
-  BUS --> WS["WebSocket<br/>incident room"]
-  BUS --> WH["Webhook Dispatcher<br/>Slack / Discord"]
-  BUS --> AGG["Aggregator<br/>cron rollup"]
-</pre>
-<div class="cap">Figure 4 — Distribution des événements à travers l'EventBus.</div>
-</div>
-
-<h3>Catalogue des événements de domaine</h3>
-<table>
-<thead><tr><th style="width:26%">Événement</th><th>Émis par</th><th>Consommé par</th></tr></thead>
-<tbody>
-<tr><td><code>RawApiCallReceived</code></td><td>MetricsIngestion</td><td>CostCalculation</td></tr>
-<tr><td><code>ApiCallProcessed</code></td><td>CostCalculation</td><td>SSE, Aggregation, IncidentEngine</td></tr>
-<tr><td><code>ErrorDetected</code></td><td>MetricsIngestion</td><td>IncidentEngine, SSE, Webhook</td></tr>
-<tr><td><code>IncidentCreated</code></td><td>IncidentEngine</td><td>WebSocket, SSE, Webhook</td></tr>
-<tr><td><code>FallbackActivated</code></td><td>FallbackEngine</td><td>WebSocket, SSE, Webhook</td></tr>
-<tr><td><code>CostThresholdExceeded</code></td><td>BudgetModule</td><td>WebSocket, Webhook</td></tr>
-<tr><td><code>PromptRepeated</code></td><td>PromptAnalysis</td><td>SSE, Aggregation</td></tr>
-<tr><td><code>IncidentResolved</code></td><td>IncidentEngine</td><td>WebSocket, Webhook</td></tr>
-</tbody>
-</table>
-</section>
-
-<section class="page-break">
-<h2 id="sect-2-10">2.10 — Diagramme de séquence — activation d'un fallback</h2>
-<p>Scénario de référence : timeout répété d'OpenAI suivi d'un basculement vers Gemini
-(cas d'usage UC-02). Le diagramme montre l'enchaînement asynchrone (métriques) puis
-synchrone (mise à jour Kong).</p>
+<span class="slide-tag">Slide 12</span>
+<h2 id="sect-2-7">2.7 — Séquence : détection d'anomalie</h2>
+<p>Scénario nominal : Kong renvoie des 5xx, Prometheus le voit, la règle
+<code>ERROR_RATE</code> se déclenche, un incident est créé, la salle s'ouvre et Slack
+est notifié.</p>
 <div class="diagram">
 <pre class="mermaid">
 sequenceDiagram
-  participant App as Application
   participant Kong
-  participant MET as Metrics Engine
-  participant BUS as EventBus / Redis
-  participant INC as Incident Engine
-  participant WS as WebSocket Room
+  participant Prom as Prometheus
+  participant MET as MetricsService
+  participant MON as MonitoringService
+  participant BUS as EventEmitter2
+  participant INC as IncidentsService
+  participant WSG as IncidentRoomGateway
   participant Admin
-  participant KA as KongAdapter
-  App->>Kong: POST /openai/v1/chat
-  Kong-->>App: 504 timeout
-  Kong->>MET: log HTTP (latency, status)
-  MET->>BUS: ErrorDetected
-  BUS->>INC: ErrorDetected
-  INC->>INC: créer Incident (OPEN)
-  INC->>BUS: IncidentCreated
-  BUS->>WS: IncidentCreated
-  WS-->>Admin: notification + ouverture salle
-  Admin->>WS: ACTIVATE_FALLBACK {to: gemini}
-  WS->>KA: updateRouteFallback(service, gemini)
-  KA->>Kong: PUT /upstreams (Admin API)
-  Kong-->>KA: routing updated
-  KA->>BUS: FallbackActivated
-  BUS->>WS: FallbackActivated
-  WS-->>Admin: incident UI mis à jour
+  participant LIS as IncidentCreatedListener
+  participant Slack
+  Kong-->>Prom: kong_http_status{code="5xx"}
+  loop every 15s
+    MET->>Prom: PromQL queries
+    Prom-->>MET: status codes, latency
+    MET->>BUS: metrics.updated
+  end
+  MON->>MET: getLatest(scope)
+  MON->>MON: evaluate rules + cooldown
+  MON->>BUS: monitoring.threshold.exceeded
+  BUS->>INC: monitoring.threshold.exceeded
+  INC->>INC: create Incident (OPEN)
+  INC->>BUS: incident.created
+  BUS->>WSG: incident.created
+  WSG-->>Admin: notify room
+  BUS->>LIS: incident.created
+  LIS->>Slack: HMAC-signed POST
+  Slack-->>LIS: 200 OK
+  Admin->>WSG: ackIncident
+  WSG->>INC: acknowledge(adminId)
+  INC-->>WSG: snapshot
+  WSG-->>Admin: incidentUpdated
 </pre>
-<div class="cap">Figure 5 — Diagramme de séquence : détection d'incident et activation manuelle du fallback.</div>
+<div class="cap">Figure 4 — Détection d'une anomalie et fan-out vers WebSocket + webhooks.</div>
 </div>
-<p class="small">La phase de détection (Kong → Metrics → EventBus → Incident) est
-asynchrone et tolère la latence. La phase d'action (Admin → WebSocket → KongAdapter → Kong)
-est synchrone : l'admin reçoit une confirmation immédiate, ce qui évite les conditions de
-course sur le routage.</p>
 </section>
 
 <section>
-<h2 id="sect-2-11">2.11 — Cycle de vie d'un incident</h2>
-<p>L'incident est modélisé comme une machine à états stricte (règle BR-05). Les transitions
-ne sont autorisées que dans un seul sens ; un incident résolu est définitif.</p>
+<span class="slide-tag">Slide 13</span>
+<h2 id="sect-2-8">2.8 — Cycle de vie d'un incident</h2>
+<p>L'incident est modélisé comme une machine à états stricte. Les transitions sont
+contrôlées par <code>IncidentsService</code> ; toute action est journalisée dans
+<code>incident_logs</code>.</p>
 <div class="diagram">
 <pre class="mermaid">
 stateDiagram-v2
-  [*] --> Open : détection (timeout / 5xx / budget)
-  Open --> Acknowledged : acknowledge(adminId, notes)
-  Open --> Resolved : auto-resolve (5 min sans erreur)
-  Acknowledged --> Resolved : resolve()
-  Acknowledged --> Acknowledged : activateFallback / chat / présence
+  [*] --> Open : monitoring.threshold.exceeded
+  Open --> Acknowledged : ackIncident(adminId)
+  Acknowledged --> Resolved : resolveIncident(adminId)
+  Open --> Resolved : resolveIncident(adminId)
+  Acknowledged --> Acknowledged : sendMessage / présence
   Resolved --> [*]
   note right of Open
     Salle WebSocket ouverte
-    Admins notifiés
+    Listener webhooks déclenché
   end note
   note right of Resolved
-    Journal figé (append-only)
-    Non réouvrable
+    resolvedAt fixé
+    Journal figé
   end note
 </pre>
-<div class="cap">Figure 6 — Machine à états du cycle de vie d'un incident.</div>
+<div class="cap">Figure 5 — Transitions appliquées par <code>IncidentsService</code>.</div>
 </div>
+<div class="box warn"><p class="small"><strong>À noter.</strong> L'auto-résolution
+« 5 min sans erreur » est <em>hors périmètre</em> de la V1 : un incident reste ouvert
+tant qu'un admin ne le résout pas explicitement.</p></div>
 </section>
 
 <section>
-<h2 id="sect-2-12">2.12 — Modèle physique de données (ERD)</h2>
-<p>Le modèle physique PostgreSQL. Les tables <code>metrics</code> et
-<code>hourly_metrics_aggregates</code> sont partitionnées par mois ; la configuration
-applique des contraintes de clé étrangère et des index sur les requêtes chaudes.</p>
+<span class="slide-tag">Slide 14</span>
+<h2 id="sect-2-9">2.9 — Modèle physique de données</h2>
+<p>Quatre tables sont gérées par TypeORM dans la base <code>sentinel_gateway</code>
+(<code>synchronize: true</code> en dev). Les autres états (webhooks, deliveries,
+messenger) vivent en mémoire dans la V1.</p>
 <div class="diagram">
 <pre class="mermaid">
 erDiagram
-  providers ||--o{ service_providers : "lié via"
-  services  ||--o{ service_providers : "lié via"
-  services  ||--o{ fallback_rules : "possède"
-  services  ||--o{ metrics : "génère"
-  providers ||--o{ metrics : "sert"
-  metrics   ||--o| error_events : "peut produire"
-  services  ||--o{ incidents : "concerne"
-  providers ||--o{ incidents : "implique"
-  incidents ||--o{ incident_logs : "journalise"
-  services  ||--o{ budgets : "budgétise"
-  services  ||--o{ repeated_prompts : "analyse"
-  services  ||--o{ hourly_metrics_aggregates : "résume"
+  users ||--o{ incident_logs : "authors via admin_id"
+  incidents ||--o{ incident_logs : "logged in"
+  monitoring_rules ||..|{ incidents : "triggers"
 
-  providers {
+  users {
+    uuid id PK
+    varchar email UK
+    varchar full_name
+    varchar password_hash
+    enum role
+    enum status
+    timestamp created_at
+    timestamp updated_at
+  }
+  monitoring_rules {
     uuid id PK
     varchar name UK
+    varchar service_name
+    uuid provider_id
     enum type
-    varchar base_url
-    enum auth_type
-    text secret_encrypted
-    decimal monthly_budget_usd
+    decimal error_rate_threshold
+    int latency_threshold_ms
+    varchar metric_window
+    int cooldown_minutes
     bool is_active
-    timestamp deleted_at
-  }
-  services {
-    uuid id PK
-    varchar name UK
-    varchar team
-    decimal monthly_budget_usd
-  }
-  service_providers {
-    uuid id PK
-    uuid service_id FK
-    uuid provider_id FK
-    bool is_primary
-    int priority_order
-  }
-  fallback_rules {
-    uuid id PK
-    uuid service_id FK
-    uuid primary_provider_id FK
-    text fallback_provider_ids
-    text trigger_on
-  }
-  metrics {
-    uuid id PK
-    uuid service_id FK
-    uuid provider_id FK
-    int latency_ms
-    int status_code
-    int tokens_input
-    int tokens_output
-    decimal cost_usd
-    timestamp timestamp
-  }
-  error_events {
-    uuid id PK
-    uuid metric_id FK
-    varchar error_type
-    timestamp timestamp
+    enum severity
+    timestamp last_triggered_at
+    timestamp created_at
+    timestamp updated_at
   }
   incidents {
     uuid id PK
-    uuid service_id FK
-    uuid provider_id FK
-    varchar severity
-    varchar status
-    uuid fallback_provider_id FK
+    uuid service_id
+    uuid provider_id
+    enum severity
+    text reason
+    enum status
     timestamp created_at
+    timestamp updated_at
+    timestamp resolved_at
   }
   incident_logs {
     serial id PK
     uuid incident_id FK
     varchar admin_id
-    varchar action
-    json details
-    timestamp timestamp
-  }
-  budgets {
-    uuid id PK
-    uuid service_id FK
-    date month_year
-    decimal limit_usd
-    int warning_threshold_percent
-    decimal spent_usd
-  }
-  repeated_prompts {
-    serial id PK
-    uuid service_id FK
-    varchar prompt_hash
-    int count
-    decimal estimated_waste_usd
-  }
-  hourly_metrics_aggregates {
-    serial id PK
-    uuid service_id FK
-    uuid provider_id FK
-    timestamp hour_bucket
-    int latency_p95_ms
-    decimal error_rate
-    decimal cost_usd
+    varchar admin_name
+    enum action
+    jsonb details
+    timestamp created_at
   }
 </pre>
-<div class="cap">Figure 7 — Modèle entité-association de la base PostgreSQL.</div>
+<div class="cap">Figure 6 — Tables Postgres réellement gérées par TypeORM.</div>
 </div>
-<h3>Stratégie d'indexation et de rétention</h3>
+<h3>Stockages annexes</h3>
 <table>
-<thead><tr><th style="width:30%">Aspect</th><th>Décision</th></tr></thead>
+<thead><tr><th style="width:24%">Donnée</th><th>Où</th><th>Persistance</th></tr></thead>
 <tbody>
-<tr><td>Index requêtes chaudes</td><td><code>(service_id, provider_id, timestamp DESC)</code> sur <code>metrics</code> ; <code>(service_id, status)</code> sur <code>incidents</code>.</td></tr>
-<tr><td>Partitionnement</td><td><code>metrics</code> et <code>hourly_metrics_aggregates</code> partitionnées par mois (réduction du volume scanné).</td></tr>
-<tr><td>Prévention N+1</td><td>DataLoader côté GraphQL ; cache Redis (TTL 5 min) pour services et providers.</td></tr>
-<tr><td>Rétention</td><td>Métriques brutes 30 j ; agrégats horaires 1 an ; incidents 1 an ; journaux d'audit 2 ans. Purge par job quotidien hors pointe.</td></tr>
-<tr><td>Pool de connexions</td><td>PgBouncer, 20 connexions par worker, requêtes préparées, timeout 5 s.</td></tr>
+<tr><td>Métriques Prometheus</td><td>Cache <code>Map&lt;scopeKey, CachedMetrics&gt;</code></td><td>Mémoire (perdu au restart)</td></tr>
+<tr><td>État de santé service</td><td>Cache <code>Map&lt;serviceId, boolean&gt;</code></td><td>Mémoire</td></tr>
+<tr><td>Webhooks &amp; deliveries</td><td><code>WebhooksRepository</code> in-memory</td><td>Mémoire</td></tr>
+<tr><td>Événements Messenger inbound</td><td><code>MessengerEventsRepository</code> in-memory</td><td>Mémoire</td></tr>
+<tr><td>Présence WebSocket</td><td><code>presenceByIncident: Map&lt;incidentId, Map&lt;socketId, PresentAdmin&gt;&gt;</code></td><td>Mémoire</td></tr>
 </tbody>
 </table>
 </section>
 
 <section>
-<h2 id="sect-2-13">2.13 — Patterns de conception appliqués</h2>
-<div class="cardrow">
-  <div class="card"><b>Repository</b><br><span class="small">Abstraction de l'accès aux données pour chaque entité. Isole TypeORM de la logique métier.</span></div>
-  <div class="card"><b>Strategy</b><br><span class="small">Calcul du coût LLM : une stratégie par provider, sélectionnée à l'exécution.</span></div>
-  <div class="card"><b>Observer / Pub-Sub</b><br><span class="small">EventBus : découplage total entre modules émetteurs et consommateurs.</span></div>
-  <div class="card"><b>Adapter</b><br><span class="small">KongAdminService encapsule l'Admin API de Kong derrière une interface stable.</span></div>
-  <div class="card"><b>Factory</b><br><span class="small">LogProcessor instancie le bon type d'ApiCall selon le contenu du log.</span></div>
-  <div class="card"><b>State Machine</b><br><span class="small">Incident : transitions OPEN → ACKNOWLEDGED → RESOLVED contrôlées.</span></div>
-  <div class="card"><b>Data Mapper</b><br><span class="small">Entités TypeORM : mapping objet-relationnel sans logique métier dans l'entité.</span></div>
-  <div class="card"><b>Retry / Backoff</b><br><span class="small">Appels Kong et webhooks : 3 tentatives avec délai exponentiel.</span></div>
-  <div class="card"><b>DataLoader</b><br><span class="small">GraphQL : regroupement des requêtes pour éliminer le problème N+1.</span></div>
-</div>
-
-<h3>Communication inter-protocoles — synthèse</h3>
+<span class="slide-tag">Slide 15</span>
+<h2 id="sect-2-10">2.10 — Protocoles utilisés</h2>
 <table>
-<thead><tr><th style="width:13%">Protocole</th><th style="width:22%">Sens</th><th>Usage et caractéristique</th></tr></thead>
+<thead><tr><th style="width:14%">Protocole</th><th style="width:24%">Sens</th><th>Usage réel</th></tr></thead>
 <tbody>
-<tr><td><span class="tag b">REST</span></td><td>Admin → Sentinel</td><td>Mutations de configuration. Synchrone, bloquant jusqu'à persistance.</td></tr>
-<tr><td><span class="tag v">GraphQL</span></td><td>Dashboard → Sentinel</td><td>Requêtes analytiques. Synchrone, lecture seule, flexible.</td></tr>
-<tr><td><span class="tag a">SSE</span></td><td>Sentinel → Dashboard</td><td>Flux de métriques. Unidirectionnel serveur→client, heartbeat 30 s.</td></tr>
-<tr><td><span class="tag r">WebSocket</span></td><td>Admin ↔ Sentinel</td><td>Salle d'incident. Bidirectionnel temps réel, état partagé, présence.</td></tr>
-<tr><td><span class="tag g">Webhook</span></td><td>Sentinel → Externe</td><td>Notifications. Fire-and-forget HTTP POST, signé HMAC, 3 retries.</td></tr>
+<tr><td><span class="tag b">REST</span></td><td>Admin → Sentinel</td><td>CRUD Kong, monitoring, incidents, webhooks ; webhook entrant Messenger ; emit interne.</td></tr>
+<tr><td><span class="tag v">GraphQL</span></td><td>Admin → Sentinel</td><td>Apollo, schéma unique <code>SentinelGraphqlResolver</code> ; <code>dashboardOverview</code> agrégé en une requête.</td></tr>
+<tr><td><span class="tag a">SSE</span></td><td>Sentinel → Admin</td><td><em>Uniquement</em> <code>GET /incidents/sse</code> diffusant <code>incident.created</code>. Pas de stream de métriques.</td></tr>
+<tr><td><span class="tag r">WebSocket</span></td><td>Admin ↔ Sentinel</td><td>Namespace <code>/incident-room</code> (Socket.io) : présence, chat, ack, resolve.</td></tr>
+<tr><td><span class="tag g">Webhook</span></td><td>Sentinel → Externe</td><td>POST signé HMAC vers Slack, Discord ou endpoint <code>GENERIC</code> ; retries avec backoff.</td></tr>
+<tr><td><span class="tag n">PromQL</span></td><td>Sentinel → Prometheus</td><td><code>PrometheusService</code> assemble les PromQL des compteurs Kong et latences.</td></tr>
 </tbody>
 </table>
 </section>
 
 <section>
-<h2 id="sect-2-14">2.14 — Sécurité et architecture frontend</h2>
+<span class="slide-tag">Slide 16</span>
+<h2 id="sect-2-11">2.11 — Sécurité et authentification</h2>
 <div class="grid2">
-<div>
-<h4>Architecture de sécurité</h4>
-<ul class="small">
-<li><strong>Authentification :</strong> JWT avec expiration 8 h, vérifié par un guard NestJS sur REST, GraphQL et à la connexion WebSocket.</li>
-<li><strong>Secrets :</strong> chiffrement AES-256-GCM, clé maîtresse injectée par variable d'environnement (<code>SENTINEL_MASTER_KEY</code>).</li>
-<li><strong>Transport :</strong> HTTPS / TLS sur toutes les surfaces exposées.</li>
-<li><strong>Validation :</strong> validation stricte des entrées (class-validator / Joi) sur chaque DTO ; rejet 400 explicite.</li>
-<li><strong>Webhooks :</strong> charge signée HMAC pour authentifier l'émetteur côté récepteur.</li>
-<li><strong>Audit :</strong> toute mutation journalisée (auteur, nature, horodatage), rétention 2 ans.</li>
-<li><strong>Erreurs :</strong> jamais de <em>stack trace</em> exposée ; un <code>correlation_id</code> est renvoyé au client.</li>
-</ul>
+  <div>
+    <h4>Authentification</h4>
+    <ul class="small">
+      <li><strong>JWT</strong> via Passport (<code>JwtStrategy</code>, <code>JwtAuthGuard</code>).</li>
+      <li><strong>GraphQL</strong> protégé par <code>GqlJwtAuthGuard</code>.</li>
+      <li><strong>WebhookAdminGuard</strong> pour les routes d'administration des webhooks (clé <code>X-Sentinel-Admin-Key</code>).</li>
+      <li><strong>CeoSecretService</strong> requis pour désactiver un autre admin.</li>
+    </ul>
+  </div>
+  <div>
+    <h4>Intégrité &amp; sécurité opérationnelle</h4>
+    <ul class="small">
+      <li><strong>Signature HMAC</strong> SHA-256 des payloads webhook sortants si <code>secret</code> configuré.</li>
+      <li><strong>Sanitisation</strong> centralisée dans <code>common/sanitize.ts</code>.</li>
+      <li><strong>Validation</strong> stricte des DTO via <code>class-validator</code>.</li>
+      <li>Les <strong>secrets webhook</strong> ne sont jamais renvoyés dans les réponses publiques (<code>hasSecret</code> uniquement).</li>
+      <li>Le <strong>token Messenger</strong> ne quitte jamais l'environnement.</li>
+    </ul>
+  </div>
 </div>
-<div>
-<h4>Architecture frontend (P6)</h4>
-<ul class="small">
-<li><strong>Stack :</strong> React 18 + Vite + TypeScript, Tailwind CSS, shadcn/ui, Recharts.</li>
-<li><strong>État :</strong> Apollo Client (état serveur GraphQL), état local léger pour l'UI.</li>
-<li><strong>Temps réel :</strong> client SSE (<code>EventSource</code>) pour les métriques, client Socket.io pour la salle d'incident.</li>
-<li><strong>Pages :</strong> <code>/dashboard</code>, <code>/services</code>, <code>/providers</code>, <code>/analytics</code>, <code>/incident-room</code>.</li>
-<li><strong>Performance :</strong> découpage de code, mémoïsation, <em>skeleton loaders</em> en cas de latence API.</li>
-<li><strong>Résilience UI :</strong> indicateur hors-ligne si SSE tombe ; salle d'incident désactivée si WebSocket indisponible.</li>
-<li><strong>Accessibilité :</strong> WCAG 2.1 AA — HTML sémantique, ARIA, navigation clavier.</li>
-</ul>
-</div>
-</div>
-<div class="box ok"><p class="small"><strong>Scalabilité horizontale.</strong> Kong (3→N
-nœuds), Sentinel (2→N instances synchronisées par Redis Pub/Sub), réplicas PostgreSQL en
-lecture, Redis en cluster. Chaque couche se met à l'échelle indépendamment, conformément
-à NFR-03.</p></div>
+<div class="box danger"><p class="small"><strong>Points d'attention V1.</strong>
+TypeORM <code>synchronize: true</code> est activé : OK en dev, à désactiver en
+production. Les webhooks sont en mémoire : redémarrer le backend efface la
+configuration. Pas encore d'HTTPS au niveau Sentinel — Kong est censé gérer la
+terminaison TLS.</p></div>
 </section>
 
 <!-- ================= PARTIE III ================= -->
 <div class="part-title">
   <div class="k">Partie III</div>
-  <h1>Plan d'implémentation — équipe de 6 développeurs</h1>
+  <h1>Équipe et démonstration</h1>
+  <div class="sub">Comment les 6 développeurs se répartissent les modules, ce qui est
+  testé et ce qui reste à finir.</div>
 </div>
 
 <section>
-<h2 id="sect-3-1">3.1 — Principes d'organisation</h2>
-<p>Le plan repose sur un principe directeur : <strong>un lot fonctionnel autonome par
-développeur</strong>. Le découplage par EventBus et la séparation apps / libs du monorepo
-permettent à chacun d'avancer en parallèle dès que les contrats d'interface sont gelés.</p>
-<div class="cardrow">
-  <div class="card"><b>Parallélisation</b><br><span class="small">Après le gel des contrats (fin de phase 0), les 6 lots progressent indépendamment.</span></div>
-  <div class="card"><b>Contrats d'abord</b><br><span class="small">Les interfaces (<code>shared-types</code>, schémas REST / GraphQL / WS) sont figées avant tout codage métier.</span></div>
-  <div class="card"><b>Intégration continue</b><br><span class="small">Daily standup, revues croisées, branche <code>develop</code> intégrée quotidiennement.</span></div>
-</div>
-<h3>Stratégie d'intégration</h3>
-<ul class="small">
-<li><strong>Bouchons (mocks) :</strong> tant qu'une dépendance n'est pas livrée, chaque équipe travaille contre un bouchon respectant le contrat <code>shared-types</code>.</li>
-<li><strong>Branches :</strong> <code>main</code> protégée, <code>develop</code> intégrée, <code>feature/*</code> par lot avec PR obligatoire et revue d'un pair.</li>
-<li><strong>Portes d'architecture :</strong> revue d'architecture avant chaque jalon majeur pour vérifier le respect des contrats.</li>
-</ul>
-</section>
-
-<section>
-<h2 id="sect-3-2">3.2 — Matrice de répartition</h2>
+<span class="slide-tag">Slide 17</span>
+<h2 id="sect-3-1">3.1 — Répartition de l'équipe</h2>
+<p>Chaque développeur possède un domaine fonctionnel. Le découpage par
+<code>EventEmitter2</code> permet d'avancer en parallèle dès que les types d'événements
+sont gelés.</p>
 <table>
-<thead><tr><th style="width:6%">Dév.</th><th style="width:20%">Lot</th><th>Périmètre &amp; livrables clés</th><th style="width:24%">Apps / libs possédées</th></tr></thead>
+<thead><tr><th style="width:6%">Dév.</th><th style="width:22%">Lot</th><th>Périmètre et modules</th></tr></thead>
 <tbody>
-<tr><td><strong>P1</strong></td><td>Kong &amp; Gateway Routing</td><td>Installation et configuration de Kong, services / routes vers les APIs, synchronisation Sentinel→Kong, plugin de fallback, logs Kong→Sentinel.</td><td><code>apps/gateway-sync</code><br><code>libs/kong-adapter</code><br><code>infrastructure/kong</code></td></tr>
-<tr><td><strong>P2</strong></td><td>REST API &amp; Configuration</td><td>API REST de configuration (providers, services, budgets, fallbacks, webhooks), gestion chiffrée des secrets, authentification JWT, validation.</td><td><code>apps/config-api</code><br><code>libs/auth</code><br><code>libs/secrets</code></td></tr>
-<tr><td><strong>P3</strong></td><td>Metrics &amp; Cost Engine</td><td>Pipeline d'ingestion des métriques, calcul des coûts LLM, détection d'erreurs et de prompts répétés, agrégation cron.</td><td><code>apps/metrics-engine</code><br><code>libs/analytics</code></td></tr>
-<tr><td><strong>P4</strong></td><td>Realtime &amp; Incidents</td><td>Streaming SSE des métriques, salle d'incident WebSocket, machine à états des incidents, EventBus, distribution d'événements.</td><td><code>apps/realtime-gateway</code><br><code>libs/event-bus</code><br><code>libs/incidents · websocket · sse</code></td></tr>
-<tr><td><strong>P5</strong></td><td>GraphQL Analytics</td><td>Schéma GraphQL, résolveurs optimisés, agrégations analytiques, DataLoader, cache de requêtes.</td><td><code>apps/graphql-api</code></td></tr>
-<tr><td><strong>P6</strong></td><td>Frontend Dashboard</td><td>Tableau de bord React, intégration SSE / WebSocket / GraphQL / REST, salle d'incident UI, scénario de démonstration.</td><td><code>apps/frontend</code></td></tr>
-</tbody>
-</table>
-<div class="box info"><p class="small"><strong>Librairies transverses partagées.</strong>
-<code>libs/database</code> et <code>libs/shared-types</code> sont co-maintenues : leur
-conception est pilotée collectivement en phase 0, P2 en assure ensuite la cohérence en
-tant que référent.</p></div>
-</section>
-
-<section>
-<h2 id="sect-3-3">3.3 — Graphe de dépendances entre lots</h2>
-<p>Les flèches indiquent « dépend de ». Le chemin critique passe par
-P1 → P3 → P4 → P6 : tout retard sur Kong ou les métriques décale le temps réel et le frontend.</p>
-<div class="diagram">
-<pre class="mermaid">
-flowchart LR
-  P0["Phase 0<br/>Contrats &amp; setup"] --> P1["P1 · Kong / Gateway"]
-  P0 --> P2["P2 · REST API"]
-  P1 --> P3["P3 · Metrics Engine"]
-  P2 --> P3
-  P3 --> P4["P4 · Realtime / Incidents"]
-  P2 --> P4
-  P2 --> P5["P5 · GraphQL Analytics"]
-  P3 --> P5
-  P4 --> P6["P6 · Frontend"]
-  P5 --> P6
-  P2 --> P6
-  P1 --> P4
-</pre>
-<div class="cap">Figure 8 — Graphe de dépendances : P0 débloque tout le monde ; P6 dépend de P2, P4 et P5.</div>
-</div>
-<table>
-<thead><tr><th style="width:10%">Lot</th><th style="width:32%">Dépend de</th><th>Nature de la dépendance</th></tr></thead>
-<tbody>
-<tr><td><strong>P1</strong></td><td>Phase 0</td><td>Contrats <code>kong-adapter</code> et schéma de logs.</td></tr>
-<tr><td><strong>P2</strong></td><td>Phase 0</td><td>Schéma de base de données, <code>shared-types</code>.</td></tr>
-<tr><td><strong>P3</strong></td><td>P1, P2</td><td>Logs Kong (P1), configuration des providers (P2).</td></tr>
-<tr><td><strong>P4</strong></td><td>P2, P3, P1</td><td>Événements de métriques (P3), auth JWT (P2), KongAdapter (P1) pour le fallback.</td></tr>
-<tr><td><strong>P5</strong></td><td>P2, P3</td><td>Entités de configuration (P2), données agrégées (P3).</td></tr>
-<tr><td><strong>P6</strong></td><td>P2, P4, P5</td><td>API REST (P2), SSE / WebSocket (P4), GraphQL (P5).</td></tr>
+<tr><td><strong>P1</strong></td><td>Kong &amp; Gateway</td><td>Configuration Docker Compose de Kong, <code>kong.yaml</code> déclaratif, <code>GatewayModule</code> (services / routes / plugins / consumers) via <code>kong-client</code> généré.</td></tr>
+<tr><td><strong>P2</strong></td><td>Auth &amp; Users</td><td><code>AuthModule</code> (JWT, secret CEO), <code>UsersModule</code> (admins), DTO et entités, hash de mot de passe.</td></tr>
+<tr><td><strong>P3</strong></td><td>Metrics &amp; Monitoring</td><td><code>MetricsModule</code> (polling Prometheus + cache + santé), <code>MonitoringModule</code> (règles + checks + cooldown + événement <code>monitoring.threshold.exceeded</code>).</td></tr>
+<tr><td><strong>P4</strong></td><td>Incidents &amp; Realtime</td><td><code>IncidentsModule</code> (entités, service, controller, SSE), <code>IncidentRoomGateway</code> (Socket.io présence + chat + actions).</td></tr>
+<tr><td><strong>P5</strong></td><td>Webhooks, Messenger &amp; GraphQL</td><td><code>WebhooksModule</code> (Slack / Discord / Generic + HMAC + retries), <code>MessengerModule</code> (callback Meta inbound), <code>SentinelGraphqlModule</code> (résolveur unique).</td></tr>
+<tr><td><strong>P6</strong></td><td>Frontend incident-room</td><td>Mini-SPA React + Vite consommant <code>/incident-room</code> Socket.io et <code>/incidents/sse</code> ; build injecté dans <code>sentinel-core/public/</code>.</td></tr>
 </tbody>
 </table>
 </section>
 
 <section>
-<h2 id="sect-3-4">3.4 — Contrats d'interface (gel des contrats)</h2>
-<p>Pour permettre la parallélisation, les contrats suivants sont <strong>figés à la fin de
-la phase 0</strong> et versionnés dans <code>libs/shared-types</code>. Toute évolution
-ultérieure passe par une revue d'architecture.</p>
+<span class="slide-tag">Slide 18</span>
+<h2 id="sect-3-2">3.2 — Stratégie de tests</h2>
 <table>
-<thead><tr><th style="width:18%">Contrat</th><th>Producteur</th><th>Consommateur(s)</th><th style="width:30%">Forme</th></tr></thead>
+<thead><tr><th style="width:18%">Niveau</th><th style="width:22%">Outils</th><th>Périmètre actuel</th></tr></thead>
 <tbody>
-<tr><td>Schéma de logs Kong</td><td>P1</td><td>P3</td><td>Interface <code>IKongLogEntry</code></td></tr>
-<tr><td>API REST de config</td><td>P2</td><td>P1, P6</td><td>OpenAPI / Swagger + DTO</td></tr>
-<tr><td>Entités de domaine</td><td>P2 (référent)</td><td>P3, P4, P5</td><td>Entités TypeORM <code>libs/database</code></td></tr>
-<tr><td>Événements de domaine</td><td>P4 (référent)</td><td>Tous</td><td>Types d'événements EventBus</td></tr>
-<tr><td>Événements SSE</td><td>P4</td><td>P6</td><td>Types d'<code>event:</code> et payloads</td></tr>
-<tr><td>Messages WebSocket</td><td>P4</td><td>P6</td><td>Messages client↔serveur typés</td></tr>
-<tr><td>Schéma GraphQL</td><td>P5</td><td>P6</td><td>Fichier <code>schema.gql</code></td></tr>
-<tr><td>Payloads de webhook</td><td>P4</td><td>Externe</td><td>Schéma JSON signé HMAC</td></tr>
+<tr><td><strong>Unitaire</strong></td><td>Jest</td><td><code>metrics.service.spec.ts</code>, <code>prometheus.service.spec.ts</code>, <code>monitoring.service.spec.ts</code>.</td></tr>
+<tr><td><strong>Intégration / e2e</strong></td><td>Supertest (config <code>test/jest-e2e.json</code>)</td><td>Couvre les contrôleurs webhooks et l'endpoint <code>/webhooks/emit</code> ; à étendre aux autres domaines.</td></tr>
+<tr><td><strong>Type-check</strong></td><td><code>npx tsc --noEmit</code></td><td>Garde-fou imposé avant chaque PR.</td></tr>
+<tr><td><strong>Lint</strong></td><td>ESLint + Prettier</td><td>Configuration partagée (<code>eslint.config.mjs</code>, <code>.prettierrc</code>).</td></tr>
+<tr><td><strong>Démo de bout en bout</strong></td><td><code>docker compose up</code> + collection HTTP</td><td><code>test_sentinel_app.http.example</code> sert de script de scénario reproductible.</td></tr>
 </tbody>
 </table>
-</section>
-
-<section class="page-break">
-<h2 id="sect-3-5">3.5 — Planning et découpage en phases</h2>
-<p>Le projet est découpé en 5 phases. La phase 0 est commune et bloquante ; les phases 1
-à 4 sont menées en parallèle par lot ; la phase 5 est dédiée à l'intégration et à la démo.</p>
-<table>
-<thead><tr><th style="width:9%">Phase</th><th style="width:22%">Intitulé</th><th>Contenu &amp; activités clés</th></tr></thead>
-<tbody>
-<tr><td><strong>Phase 0</strong></td><td>Conception &amp; setup</td><td>Atelier d'architecture, conception du schéma de base, gel des contrats <code>shared-types</code>, mise en place du monorepo Nx, des conteneurs Docker, de la CI.</td></tr>
-<tr><td><strong>Phase 1</strong></td><td>Fondations</td><td>Kong opérationnel (P1), squelette REST + base (P2), pipeline d'ingestion (P3), infra SSE/WS (P4), schéma GraphQL (P5), layout React (P6).</td></tr>
-<tr><td><strong>Phase 2</strong></td><td>Cœur fonctionnel</td><td>CRUD complet (P2), routage + fallback Kong (P1), calcul des coûts (P3), salle d'incident (P4), résolveurs analytiques (P5), pages monitoring (P6).</td></tr>
-<tr><td><strong>Phase 3</strong></td><td>Temps réel &amp; analytique</td><td>Logs Kong → métriques (P1/P3), détection de prompts (P3), distribution d'événements (P4), agrégations &amp; DataLoader (P5), intégration SSE/WS au dashboard (P6).</td></tr>
-<tr><td><strong>Phase 4</strong></td><td>Finalisation des lots</td><td>Webhooks (P2/P4), auto-résolution d'incident (P4), optimisation des requêtes (P5), salle d'incident UI &amp; analytics UI (P6), durcissement (P1/P3).</td></tr>
-<tr><td><strong>Phase 5</strong></td><td>Intégration &amp; démo</td><td>Tests bout-en-bout, scénario de démonstration, documentation, correction de bugs, revue d'architecture finale.</td></tr>
-</tbody>
-</table>
-
-<div class="diagram">
-<pre class="mermaid">
-gantt
-  dateFormat X
-  axisFormat J%s
-  title Planning indicatif par lot (unité = jour)
-  section Commun
-  Phase 0 - Contrats & setup        :done, p0, 0, 1
-  section P1 Kong
-  Fondations Kong                    :a1, 1, 2
-  Routage & fallback                 :a2, after a1, 2
-  Logs Kong -> Sentinel              :a3, after a2, 1
-  section P2 REST
-  Setup & secrets                    :b1, 1, 2
-  CRUD providers/services/budgets    :b2, after b1, 2
-  Fallbacks & webhooks               :b3, after b2, 1
-  section P3 Metrics
-  Pipeline ingestion                 :c1, 2, 2
-  Coûts & détection prompts          :c2, after c1, 2
-  Agrégation & events                :c3, after c2, 1
-  section P4 Realtime
-  SSE & WebSocket infra              :d1, 2, 2
-  Salle incident & fallback          :d2, after d1, 2
-  Distribution events & persistance  :d3, after d2, 1
-  section P5 GraphQL
-  Schema & resolvers                 :e1, 2, 2
-  Analytics & DataLoader             :e2, after e1, 2
-  section P6 Frontend
-  Setup & layout                     :f1, 1, 2
-  Dashboard & pages                  :f2, after f1, 2
-  Incident room & analytics UI       :f3, after f2, 2
-  section Commun
-  Phase 5 - Intégration & démo       :crit, p5, 7, 2
-</pre>
-<div class="cap">Figure 9 — Diagramme de Gantt indicatif (l'unité « jour » se transpose en jour ou en sprint selon le rythme retenu).</div>
-</div>
+<div class="box info"><p class="small"><strong>Convention.</strong> Chaque développeur
+teste son lot ; les tests bout-en-bout sont mutualisés en fin de cycle. La
+documentation par module (<code>sentinel-core/docs/</code>) liste les commandes de
+vérification à exécuter avant un merge.</p></div>
 </section>
 
 <section>
-<h2 id="sect-3-6">3.6 — Feuille de route détaillée par développeur</h2>
-
-<h3>P1 — Kong &amp; Gateway Routing</h3>
-<table>
-<thead><tr><th style="width:22%">Étape</th><th>Tâches</th></tr></thead>
-<tbody>
-<tr><td>1.1 Installation Kong</td><td>Déployer Kong 3.x via Docker, configurer l'Admin API (port 8001), créer la base Kong, vérifier la connectivité.</td></tr>
-<tr><td>1.2 Services de base</td><td>Créer les services Kong pour OpenAI, Gemini, Stripe, auth-service (URL, protocole, timeouts).</td></tr>
-<tr><td>1.3 Routage</td><td>Créer les routes <code>/openai/*</code>, <code>/gemini/*</code>, <code>/stripe/*</code> ; configurer les <em>path rewrites</em>.</td></tr>
-<tr><td>1.4 Intégration Sentinel</td><td>Implémenter <code>libs/kong-adapter</code>, le polling de l'état Kong (≤ 30 s), le cache Redis des services / routes.</td></tr>
-<tr><td>1.5 Fallback &amp; routage dynamique</td><td>Implémenter <code>updateRouteFallback()</code>, configurer les retries Kong (3×, backoff exponentiel).</td></tr>
-<tr><td>1.6 Logs Kong</td><td>Activer le logging Kong, envoyer les logs HTTP vers le Metrics Engine — handover vers P3.</td></tr>
-</tbody>
-</table>
-
-<h3>P2 — REST API &amp; Configuration</h3>
-<table>
-<thead><tr><th style="width:22%">Étape</th><th>Tâches</th></tr></thead>
-<tbody>
-<tr><td>2.1 Setup &amp; base</td><td>Initialiser <code>config-api</code>, connexion PostgreSQL avec pooling, migrations TypeORM.</td></tr>
-<tr><td>2.2 Secrets</td><td>Implémenter <code>libs/secrets</code> : chiffrement AES-256-GCM, vault local avec clé maîtresse.</td></tr>
-<tr><td>2.3 CRUD providers</td><td>Endpoints providers (création, liste, détail, mise à jour, soft delete) + validation DTO.</td></tr>
-<tr><td>2.4 Services &amp; budgets</td><td>Endpoints services, association de providers, budgets et seuils d'alerte.</td></tr>
-<tr><td>2.5 Règles de fallback</td><td>Endpoints fallback-rules (primaire + liste de repli + conditions).</td></tr>
-<tr><td>2.6 Webhooks &amp; auth</td><td>Endpoints webhooks, authentification JWT (<code>libs/auth</code>), gestion d'erreurs, documentation OpenAPI.</td></tr>
-</tbody>
-</table>
-
-<h3>P3 — Metrics &amp; Cost Engine</h3>
-<table>
-<thead><tr><th style="width:22%">Étape</th><th>Tâches</th></tr></thead>
-<tbody>
-<tr><td>3.1 Pipeline d'ingestion</td><td>Endpoint de réception des logs Kong, parsing, persistance des <code>ApiCall</code>.</td></tr>
-<tr><td>3.2 Détection d'erreurs</td><td>Classification (401/403/429/5xx/timeout), table <code>error_events</code>, détection de motifs.</td></tr>
-<tr><td>3.3 Calcul des coûts</td><td>Parsing des tokens, <code>CostCalculator</code> + stratégies par provider, persistance du coût.</td></tr>
-<tr><td>3.4 Prompts répétés</td><td>Hachage SHA-256, comparaison sur 30 j, calcul du gaspillage, alerte.</td></tr>
-<tr><td>3.5 Agrégation</td><td>Jobs cron (5 min) : p95, taux d'erreur, coût total → <code>hourly_metrics_aggregates</code>.</td></tr>
-<tr><td>3.6 Événements</td><td>Publication des événements sur l'EventBus (canal <code>metrics</code> Redis).</td></tr>
-</tbody>
-</table>
-
-<h3>P4 — Realtime &amp; Incidents</h3>
-<table>
-<thead><tr><th style="width:22%">Étape</th><th>Tâches</th></tr></thead>
-<tbody>
-<tr><td>4.1 Streaming SSE</td><td>Endpoint <code>@Sse('streams/metrics')</code>, heartbeat 30 s, lecture du canal Redis.</td></tr>
-<tr><td>4.2 Infra WebSocket</td><td>Gateway Socket.io, auth JWT à la connexion, namespace <code>/incident-room</code>, rooms par incident.</td></tr>
-<tr><td>4.3 Logique de salle d'incident</td><td>Événements JOIN / MESSAGE / ACK, présence des admins, persistance des incidents.</td></tr>
-<tr><td>4.4 Activation de fallback</td><td>Événement <code>ACTIVATE_FALLBACK</code> → KongAdapter → diffusion <code>FallbackActivated</code>.</td></tr>
-<tr><td>4.5 Distribution d'événements</td><td>EventBus central : Redis Pub/Sub + WebSocket + SSE + webhook.</td></tr>
-<tr><td>4.6 Persistance &amp; auto-résolution</td><td>Table <code>incident_logs</code>, endpoint d'historique, auto-résolution après 5 min sans erreur.</td></tr>
-</tbody>
-</table>
-
-<h3>P5 — GraphQL Analytics</h3>
-<table>
-<thead><tr><th style="width:22%">Étape</th><th>Tâches</th></tr></thead>
-<tbody>
-<tr><td>5.1 Setup &amp; schéma</td><td>Apollo Server, types GraphQL, scalaires (DateTime, JSON), Query root.</td></tr>
-<tr><td>5.2 Services &amp; providers</td><td>Requêtes services / providers avec filtrage et pagination.</td></tr>
-<tr><td>5.3 Métriques &amp; coûts</td><td>Requêtes <code>serviceMetrics</code>, <code>providerCosts</code>, top endpoints lents / en erreur.</td></tr>
-<tr><td>5.4 Fallback &amp; incidents</td><td>Requêtes historique de basculements, incidents filtrés, timeline d'incident.</td></tr>
-<tr><td>5.5 Analytique de prompts</td><td>Requêtes prompts répétés, gaspillage estimé, recommandation de cache.</td></tr>
-<tr><td>5.6 Optimisation</td><td>Types agrégés, DataLoader anti-N+1, cache TTL 5 min, <code>dashboardOverview</code>.</td></tr>
-</tbody>
-</table>
-
-<h3>P6 — Frontend Dashboard</h3>
-<table>
-<thead><tr><th style="width:22%">Étape</th><th>Tâches</th></tr></thead>
-<tbody>
-<tr><td>6.1 Setup &amp; layout</td><td>App React + Vite, dépendances (Apollo, socket.io-client, Recharts, shadcn/ui), routing, stockage JWT.</td></tr>
-<tr><td>6.2 Dashboard overview</td><td>Page <code>/dashboard</code>, KPI, graphiques, intégration SSE temps réel.</td></tr>
-<tr><td>6.3 Services &amp; providers</td><td>Pages liste et détail, cards avec statut, filtrage.</td></tr>
-<tr><td>6.4 Analytics</td><td>Page <code>/analytics</code> : distribution de latence, ventilation des coûts, types d'erreurs, prompts répétés.</td></tr>
-<tr><td>6.5 Salle d'incident UI</td><td>Page <code>/incident-room</code> : chat, présence, panneau d'actions, intégration WebSocket.</td></tr>
-<tr><td>6.6 Démo &amp; intégration</td><td>Simulateur de requêtes, déroulé du scénario de démonstration de bout en bout.</td></tr>
-</tbody>
-</table>
-</section>
-
-<section class="page-break">
-<h2 id="sect-3-7">3.7 — Stratégie de tests</h2>
-<table>
-<thead><tr><th style="width:16%">Niveau</th><th style="width:20%">Outils</th><th>Périmètre &amp; cible</th></tr></thead>
-<tbody>
-<tr><td><strong>Unitaire</strong></td><td>Jest</td><td>Logique métier, validateurs, stratégies de coût, machine à états d'incident. Cible : couverture &gt; 80 %.</td></tr>
-<tr><td><strong>Intégration</strong></td><td>Supertest + base de test</td><td>Endpoints REST, résolveurs GraphQL, transactions. Cible : couverture &gt; 60 %.</td></tr>
-<tr><td><strong>Bout-en-bout</strong></td><td>Cypress / Playwright</td><td>Parcours critiques : connexion → configuration → requête → dashboard, et flux d'incident complet.</td></tr>
-<tr><td><strong>Charge</strong></td><td>k6</td><td>1000 req/s en référence, pic à 2000 req/s, p99 &lt; 2 s.</td></tr>
-<tr><td><strong>Sécurité</strong></td><td>OWASP ZAP</td><td>Injection SQL, XSS, CSRF sur les surfaces exposées.</td></tr>
-</tbody>
-</table>
-<div class="box info"><p class="small"><strong>Responsabilité.</strong> Chaque
-développeur teste son lot (unitaire + intégration). Les tests bout-en-bout et de charge
-sont mutualisés en phase 5 sous le pilotage de P6 (parcours) et P3 (charge).</p></div>
-
-<h2 id="sect-3-8">3.8 — Definition of Done et jalons</h2>
+<span class="slide-tag">Slide 19</span>
+<h2 id="sect-3-3">3.3 — Limites actuelles</h2>
 <div class="grid2">
-<div>
-<h4>Definition of Done (par tâche)</h4>
-<ul class="small">
-<li>Code revu et approuvé par un pair (PR mergée dans <code>develop</code>).</li>
-<li>Tests unitaires écrits et passants ; couverture du lot maintenue &gt; 80 %.</li>
-<li>Contrat <code>shared-types</code> respecté ; aucun couplage hors EventBus / contrat.</li>
-<li>Validation des entrées et gestion d'erreurs implémentées.</li>
-<li>Documentation à jour (OpenAPI / schéma GraphQL / README du module).</li>
-<li>Le composant démarre sous Docker Compose sans intervention manuelle.</li>
-</ul>
+  <div class="box warn">
+    <h4>En mémoire (perdu au redémarrage)</h4>
+    <ul class="small">
+      <li>Webhooks et leurs deliveries.</li>
+      <li>Événements et recipients Messenger.</li>
+      <li>Cache de métriques et état de santé service.</li>
+      <li>Présence dans les salles d'incident.</li>
+    </ul>
+  </div>
+  <div class="box danger">
+    <h4>Non implémenté en V1</h4>
+    <ul class="small">
+      <li>Auto-résolution d'incident.</li>
+      <li>Provider Messenger sortant (uniquement inbound).</li>
+      <li>Migrations TypeORM (mode <code>synchronize: true</code>).</li>
+      <li>Redis Pub/Sub multi-instances.</li>
+      <li>RBAC fin (un seul rôle Admin + secret CEO).</li>
+      <li>Stream SSE des métriques.</li>
+    </ul>
+  </div>
 </div>
-<div>
-<h4>Jalons</h4>
+<div class="box ok">
+<h4>Pistes d'évolution déjà câblées</h4>
 <ul class="small">
-<li><strong>J0 — Contrats gelés :</strong> <code>shared-types</code>, schéma DB et schémas d'API figés ; monorepo et CI en place.</li>
-<li><strong>J1 — Fondations vertes :</strong> Kong route le trafic, REST répond, ingestion fonctionne, layout React affiché.</li>
-<li><strong>J2 — Cœur intégré :</strong> CRUD complet, fallback opérationnel, salle d'incident fonctionnelle.</li>
-<li><strong>J3 — Temps réel de bout en bout :</strong> métriques live au dashboard, GraphQL analytique, événements distribués.</li>
-<li><strong>J4 — Gel fonctionnel :</strong> tous les lots terminés, périmètre MVP figé.</li>
-<li><strong>J5 — Démo validée :</strong> scénario complet rejoué, critères AC-01 à AC-10 satisfaits.</li>
+  <li>Le bus d'événements <code>EventEmitter2</code> peut être étendu à Redis pour multi-instances sans réécrire les listeners.</li>
+  <li>L'enum <code>WebhookProvider</code> peut accueillir <code>MESSENGER</code> sortant ; la spec de payload est déjà documentée (<code>messenger_integration.md</code>).</li>
+  <li>L'état <code>DeliveryStatus.PENDING</code> est réservé pour une future implémentation asynchrone par queue.</li>
 </ul>
-</div>
 </div>
 </section>
 
 <section>
-<h2 id="sect-3-9">3.9 — Gestion des risques</h2>
+<span class="slide-tag">Slide 20</span>
+<h2 id="sect-3-4">3.4 — Scénario de démonstration</h2>
+<p>La démo valide les critères AC-01 à AC-08 en une dizaine de minutes, depuis un
+environnement Docker Compose fraîchement démarré.</p>
 <table>
-<thead><tr><th style="width:26%">Risque</th><th style="width:10%">Prob.</th><th style="width:10%">Impact</th><th>Mitigation</th></tr></thead>
+<thead><tr><th style="width:6%">#</th><th style="width:26%">Action</th><th>Démonstration</th><th style="width:14%">Protocole</th></tr></thead>
 <tbody>
-<tr><td>Panne de Kong ou de PostgreSQL</td><td><span class="tag a">Moy.</span></td><td><span class="tag r">Élevé</span></td><td>Réplicas, basculement automatisé, restauration de sauvegarde.</td></tr>
-<tr><td>Saturation par les métriques</td><td><span class="tag a">Moy.</span></td><td><span class="tag a">Moyen</span></td><td>Tampon, contre-pression SSE, agrégation, rétention 30 j.</td></tr>
-<tr><td>Plantage de la salle d'incident</td><td><span class="tag g">Faible</span></td><td><span class="tag a">Moyen</span></td><td>Heartbeat, reconnexion automatique, fallback manuel via REST.</td></tr>
-<tr><td>Erreurs de calcul de coût</td><td><span class="tag a">Moy.</span></td><td><span class="tag a">Moyen</span></td><td>Tests unitaires des stratégies, validation manuelle avant la démo.</td></tr>
-<tr><td>Dérive des contrats d'interface</td><td><span class="tag a">Moy.</span></td><td><span class="tag r">Élevé</span></td><td>Gel en J0, revue d'architecture obligatoire pour toute évolution.</td></tr>
-<tr><td>Retard sur le chemin critique (P1→P3→P4→P6)</td><td><span class="tag a">Moy.</span></td><td><span class="tag r">Élevé</span></td><td>Bouchons conformes aux contrats, daily standup, marge en phase 5.</td></tr>
-<tr><td>Désalignement de l'équipe</td><td><span class="tag g">Faible</span></td><td><span class="tag a">Moyen</span></td><td>Daily standup, portes d'architecture, revues croisées.</td></tr>
-</tbody>
-</table>
-</section>
-
-<section>
-<h2 id="sect-3-10">3.10 — Scénario de démonstration finale</h2>
-<p>La démonstration valide l'intégration des 5 protocoles et le critère AC-09.</p>
-<table>
-<thead><tr><th style="width:8%">Étape</th><th style="width:24%">Action</th><th>Démonstration</th><th style="width:14%">Protocole</th></tr></thead>
-<tbody>
-<tr><td><strong>1</strong></td><td>Configuration</td><td>L'admin configure OpenAI et Gemini en repli, fixe un budget de 100 $/mois avec alerte à 80 %.</td><td><span class="tag b">REST</span></td></tr>
-<tr><td><strong>2</strong></td><td>Requête normale</td><td>L'application appelle <code>/openai/v1/chat</code> ; Kong route ; Sentinel collecte latence, tokens, coût.</td><td><span class="tag a">SSE</span></td></tr>
-<tr><td><strong>3</strong></td><td>Erreur détectée</td><td>Un timeout OpenAI est simulé ; Sentinel crée un incident et notifie la salle.</td><td><span class="tag r">WebSocket</span></td></tr>
-<tr><td><strong>4</strong></td><td>Fallback activé</td><td>L'admin clique « Switch to Gemini » ; le routage Kong change ; la requête réussit ; le dashboard affiche <code>FALLBACK_ACTIVATED</code>.</td><td><span class="tag r">WS</span> + <span class="tag g">Webhook</span></td></tr>
-<tr><td><strong>5</strong></td><td>Collaboration</td><td>Les admins discutent en temps réel, voient la présence, acquittent puis résolvent l'incident.</td><td><span class="tag r">WebSocket</span></td></tr>
-<tr><td><strong>6</strong></td><td>Analyse des coûts</td><td>Le même prompt est envoyé 10 fois ; Sentinel détecte la répétition, estime le gaspillage et recommande un cache.</td><td><span class="tag v">GraphQL</span></td></tr>
+<tr><td><strong>1</strong></td><td>Démarrer l'environnement</td><td><code>docker compose up</code> ; Kong, ses migrations, Prometheus, sentinel-core et les bad-services montent. Vérifier <code>GET /</code> Kong et Sentinel.</td><td><span class="tag b">REST</span></td></tr>
+<tr><td><strong>2</strong></td><td>Auth</td><td><code>POST /auth/register</code> puis <code>POST /auth/login</code> → JWT injecté dans les appels suivants.</td><td><span class="tag b">REST</span></td></tr>
+<tr><td><strong>3</strong></td><td>Configurer Kong</td><td>Créer un service vers <code>limit-exceeded</code> + une route via <code>POST /gateway/services</code> et <code>… /routes</code>. Vérifier sur Admin API Kong.</td><td><span class="tag b">REST</span></td></tr>
+<tr><td><strong>4</strong></td><td>Générer du trafic</td><td>Appeler la route Kong proxifiée plusieurs fois ; Prometheus voit monter <code>kong_http_status</code>.</td><td><span class="tag n">PromQL</span></td></tr>
+<tr><td><strong>5</strong></td><td>Créer une règle d'anomalie</td><td><code>POST /monitoring/rules</code> avec type <code>ERROR_RATE</code> seuil 0.5 et fenêtre <code>1m</code>. Lancer <code>POST /monitoring/check</code>.</td><td><span class="tag v">GraphQL</span></td></tr>
+<tr><td><strong>6</strong></td><td>Incident automatique</td><td>La règle se déclenche, un incident est créé ; un client connecté à <code>SSE /incidents/sse</code> le voit en direct.</td><td><span class="tag a">SSE</span></td></tr>
+<tr><td><strong>7</strong></td><td>Collaboration</td><td>Deux clients rejoignent <code>/incident-room</code> namespace, échangent un message, voient la présence, puis acquittent et résolvent l'incident.</td><td><span class="tag r">WebSocket</span></td></tr>
+<tr><td><strong>8</strong></td><td>Notification externe</td><td>Un webhook Slack configuré (<code>POST /webhooks</code>) reçoit le payload <code>INCIDENT_CREATED</code> ; la delivery est listée par <code>GET /webhook-deliveries</code>.</td><td><span class="tag g">Webhook</span></td></tr>
+<tr><td><strong>9</strong></td><td>Inbound Messenger (bonus)</td><td>Meta vérifie le callback (<code>hub.challenge</code>) ; un message Facebook arrive dans <code>GET /messenger/events</code>.</td><td><span class="tag b">REST</span></td></tr>
 </tbody>
 </table>
 
 <div class="box ok">
-<h4>Livrables finaux attendus</h4>
-<p class="small"><strong>Code &amp; infrastructure :</strong> monorepo GitHub, Docker
-Compose (Kong + PostgreSQL + Redis + Sentinel + frontend), migrations, <code>.env.example</code>.
-&nbsp;<strong>Documentation :</strong> README, documentation REST (OpenAPI), schéma GraphQL,
-diagramme d'architecture, runbook de déploiement, guide de dépannage.
-&nbsp;<strong>Démonstration :</strong> vidéo de démo, support de présentation, scénarios de
-test reproductibles, mesures de performance.</p>
+<h4>Livrables présentés</h4>
+<p class="small"><strong>Code &amp; infra :</strong> dépôt GitHub, <code>docker-compose.yml</code>
+auto-suffisant, scripts npm (<code>npm run docker:up</code>, <code>generate:incident-room</code>,
+<code>generate:kong-client</code>). &nbsp;<strong>Documentation :</strong> README, fichiers
+<code>sentinel-core/docs/*.md</code> par module, <code>test_sentinel_app.http.example</code>
+comme collection de requêtes. &nbsp;<strong>Démonstration :</strong> scénario ci-dessus
+rejouable à la demande.</p>
 </div>
 </section>
 
 <footer class="end">
-Sentinel Gateway — Cahier des charges, architecture détaillée et plan d'implémentation ·
-Version 1.0 · 24 mai 2026 · Document de référence pour l'équipe de 6 développeurs.
+Sentinel Gateway — Présentation du projet · Version 2.0 · 29 mai 2026 · Document de
+référence aligné sur le code de <code>sentinel-core</code>.
 </footer>
 
 <script>
@@ -1631,10 +1008,9 @@ Version 1.0 · 24 mai 2026 · Document de référence pour l'équipe de 6 dével
       'background':'#fff', 'mainBkg':'#e3eef3', 'secondBkg':'#f1f5f9'
     },
     htmlLabels:true,
-    flowchart:{curve:'basis',htmlLabels:true,nodeSpacing:42,rankSpacing:52},
-    sequence:{useMaxWidth:true,wrap:true,actorMargin:50},
-    er:{useMaxWidth:true},
-    gantt:{useMaxWidth:true,barHeight:15,fontSize:9}
+    flowchart:{curve:'basis',htmlLabels:true,nodeSpacing:42,rankSpacing:54},
+    sequence:{useMaxWidth:true,wrap:true,actorMargin:55},
+    er:{useMaxWidth:true}
   });
 </script>
 </body>
