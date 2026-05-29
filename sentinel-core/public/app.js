@@ -22,6 +22,7 @@ const state = {
   sse: {
     connected: false,
     events: [],
+    samples: [],
   },
   eventSource: null,
 };
@@ -615,6 +616,7 @@ function renderMetrics() {
         </div>
       `)}
     </section>
+    ${panel('Live Metric Curves', renderMetricCharts(state.sse.samples))}
   `);
 }
 
@@ -720,6 +722,9 @@ function pushSseEvent(type, rawData) {
     data: parsed,
   });
   state.sse.events = state.sse.events.slice(0, 20);
+  if (type === 'metrics.updated') {
+    recordMetricSample(parsed);
+  }
   updateSseStatus();
   if (state.currentView === 'metrics') renderMetrics();
 }
@@ -804,8 +809,8 @@ function renderMetricsCard(metrics) {
   if (!metrics) return '<p class="empty">No cached metrics yet. Wait for Prometheus polling or check SSE events.</p>';
   return `
     <div class="metrics-grid">
-      ${kpi('Total requests', metrics.totalRequests)}
-      ${kpi('Requests/sec', metrics.requestsPerSecond)}
+      ${kpi('Total requests', formatCount(metrics.totalRequests))}
+      ${kpi('Requests/sec', formatRate(metrics.requestsPerSecond))}
       ${kpi('P95 latency', formatLatency(metrics.latency?.p95))}
       ${kpi('P99 latency', formatLatency(metrics.latency?.p99))}
     </div>
@@ -813,8 +818,152 @@ function renderMetricsCard(metrics) {
   `;
 }
 
+function renderMetricCharts(samples = []) {
+  if (samples.length < 2) {
+    return '<p class="empty">Waiting for at least two metrics events to draw live curves.</p>';
+  }
+
+  return `
+    <div class="chart-grid">
+      ${lineChart('Requests/sec', samples, [
+        { label: 'Requests/sec', key: 'requestsPerSecond', color: '#0d5f7d', format: formatRate },
+      ])}
+      ${lineChart('Requests over 5m', samples, [
+        { label: 'Total requests', key: 'totalRequests', color: '#8f5700', format: formatCount },
+      ])}
+      ${lineChart('Latency percentiles', samples, [
+        { label: 'P50', key: 'latencyP50', color: '#22633a', format: formatLatency },
+        { label: 'P95', key: 'latencyP95', color: '#0b5872', format: formatLatency },
+        { label: 'P99', key: 'latencyP99', color: '#9f2f2f', format: formatLatency },
+      ])}
+    </div>
+  `;
+}
+
+function lineChart(title, samples, series) {
+  const width = 640;
+  const height = 220;
+  const padding = { top: 18, right: 18, bottom: 28, left: 44 };
+  const finiteValues = series.flatMap((item) =>
+    samples.map((sample) => sample[item.key]).filter((value) => Number.isFinite(value)),
+  );
+
+  if (finiteValues.length === 0) {
+    return `<article class="chart-card"><h3>${escapeHtml(title)}</h3><p class="empty">No finite values yet.</p></article>`;
+  }
+
+  const min = Math.min(0, ...finiteValues);
+  const max = Math.max(...finiteValues);
+  const domain = max === min ? 1 : max - min;
+  const pointsFor = (item) => samples
+    .map((sample, index) => {
+      const value = sample[item.key];
+      if (!Number.isFinite(value)) return null;
+      const x = padding.left + (index / Math.max(samples.length - 1, 1)) * (width - padding.left - padding.right);
+      const y = padding.top + ((max - value) / domain) * (height - padding.top - padding.bottom);
+      return `${roundForSvg(x)},${roundForSvg(y)}`;
+    })
+    .filter(Boolean)
+    .join(' ');
+
+  const latest = samples[samples.length - 1];
+
+  return `
+    <article class="chart-card">
+      <div class="chart-head">
+        <h3>${escapeHtml(title)}</h3>
+        <small>${time(latest.at)}</small>
+      </div>
+      <svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)} chart">
+        <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" />
+        <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" />
+        ${series.map((item) => `<polyline points="${pointsFor(item)}" style="--line-color:${item.color}" />`).join('')}
+      </svg>
+      <div class="chart-legend">
+        ${series.map((item) => `
+          <span><i style="--legend-color:${item.color}"></i>${escapeHtml(item.label)} <strong>${escapeHtml(item.format(latest[item.key]))}</strong></span>
+        `).join('')}
+      </div>
+    </article>
+  `;
+}
+
+function recordMetricSample(payload) {
+  const metrics = payload?.metrics;
+  if (!metrics) return;
+
+  const sample = {
+    at: payload.timestamp || new Date().toISOString(),
+    totalRequests: finiteNumber(metrics.totalRequests),
+    requestsPerSecond: finiteNumber(metrics.requestsPerSecond),
+    latencyP50: finiteNumber(metrics.latency?.p50),
+    latencyP95: finiteNumber(metrics.latency?.p95),
+    latencyP99: finiteNumber(metrics.latency?.p99),
+  };
+
+  state.sse.samples.push(sample);
+  state.sse.samples = state.sse.samples.slice(-60);
+  state.data.latestMetrics = normalizeGatewayMetrics(metrics);
+}
+
+function normalizeGatewayMetrics(metrics) {
+  return {
+    totalRequests: finiteNumber(metrics?.totalRequests) ?? 0,
+    requestsPerSecond: finiteNumber(metrics?.requestsPerSecond) ?? 0,
+    statusCodes: normalizeStatusCodes(metrics?.statusCodes),
+    latency: {
+      p50: finiteNumber(metrics?.latency?.p50),
+      p95: finiteNumber(metrics?.latency?.p95),
+      p99: finiteNumber(metrics?.latency?.p99),
+    },
+  };
+}
+
+function normalizeStatusCodes(statusCodes) {
+  if (Array.isArray(statusCodes)) {
+    return statusCodes.map((item) => ({
+      code: String(item.code),
+      count: finiteNumber(item.count) ?? 0,
+    }));
+  }
+
+  if (!statusCodes || typeof statusCodes !== 'object') {
+    return [];
+  }
+
+  return Object.entries(statusCodes).map(([code, count]) => ({
+    code,
+    count: finiteNumber(count) ?? 0,
+  }));
+}
+
+function finiteNumber(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function formatCount(value) {
+  const number = finiteNumber(value);
+  return number === null ? 'N/A' : String(Math.round(number));
+}
+
+function formatRate(value) {
+  const number = finiteNumber(value);
+  if (number === null) return 'N/A';
+  if (number === 0) return '0';
+  if (Math.abs(number) < 1) return number.toFixed(3);
+  return number.toFixed(2);
+}
+
 function formatLatency(value) {
-  return Number.isFinite(value) ? `${value}ms` : 'N/A';
+  const number = finiteNumber(value);
+  if (number === null) return 'N/A';
+  if (number >= 1000) return `${(number / 1000).toFixed(2)}s`;
+  return `${Math.round(number)}ms`;
+}
+
+function roundForSvg(value) {
+  return Number(value).toFixed(2);
 }
 
 function renderEventLog(event) {
