@@ -806,11 +806,15 @@ function renderMetricsCard(metrics) {
     <div class="metrics-grid">
       ${kpi('Total requests', metrics.totalRequests)}
       ${kpi('Requests/sec', metrics.requestsPerSecond)}
-      ${kpi('P95 latency', `${metrics.latency.p95}ms`)}
-      ${kpi('P99 latency', `${metrics.latency.p99}ms`)}
+      ${kpi('P95 latency', formatLatency(metrics.latency?.p95))}
+      ${kpi('P99 latency', formatLatency(metrics.latency?.p99))}
     </div>
     ${table(['Status', 'Count'], metrics.statusCodes.map((item) => [item.code, String(item.count)]))}
   `;
+}
+
+function formatLatency(value) {
+  return Number.isFinite(value) ? `${value}ms` : 'N/A';
 }
 
 function renderEventLog(event) {

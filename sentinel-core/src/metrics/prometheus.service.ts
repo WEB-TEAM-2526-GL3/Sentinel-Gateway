@@ -28,13 +28,13 @@ export class PrometheusService {
           `sum(rate(kong_http_requests_total${labels}[${range}]))`,
         ),
         this.queryStatusCodeBreakdown(labels, range),
-        this.querySingle(
+        this.queryOptionalSingle(
           `histogram_quantile(0.5, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`,
         ),
-        this.querySingle(
+        this.queryOptionalSingle(
           `histogram_quantile(0.95, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`,
         ),
-        this.querySingle(
+        this.queryOptionalSingle(
           `histogram_quantile(0.99, sum(rate(kong_upstream_latency_ms_bucket${labels}[${range}])) by (le))`,
         ),
       ]);
@@ -87,6 +87,10 @@ export class PrometheusService {
   }
 
   private async querySingle(query: string): Promise<number> {
+    return (await this.queryOptionalSingle(query)) ?? 0;
+  }
+
+  private async queryOptionalSingle(query: string): Promise<number | null> {
     try {
       console.log('[PrometheusService] querySingle', query);
       const { data } = await firstValueFrom(
@@ -95,19 +99,24 @@ export class PrometheusService {
         }),
       );
       if (data.status === 'success' && data.data.result.length > 0) {
-        const value = parseFloat(data.data.result[0].value?.[1] ?? '0');
-        console.log('[PrometheusService] querySingle result', { query, value });
+        const rawValue = data.data.result[0].value?.[1];
+        const value = this.parseFiniteNumber(rawValue);
+        console.log('[PrometheusService] querySingle result', {
+          query,
+          rawValue,
+          value,
+        });
         return value;
       }
 
       console.log('[PrometheusService] querySingle result', {
         query,
-        value: 0,
+        value: null,
       });
-      return 0;
+      return null;
     } catch (err) {
       this.logger.error(`Prometheus query failed: ${query}`, err);
-      return 0;
+      return null;
     }
   }
 
@@ -129,7 +138,9 @@ export class PrometheusService {
       const result: Record<string, number> = {};
       if (data.status === 'success') {
         for (const item of data.data.result) {
-          result[item.metric.code] = parseFloat(item.value?.[1] ?? '0');
+          result[item.metric.code] = this.parseFiniteNumber(
+            item.value?.[1],
+          ) ?? 0;
         }
       }
 
@@ -144,6 +155,11 @@ export class PrometheusService {
       this.logger.error('Status code query failed', err);
       return {};
     }
+  }
+
+  private parseFiniteNumber(value: string | undefined): number | null {
+    const parsed = Number(value ?? '0');
+    return Number.isFinite(parsed) ? parsed : null;
   }
 }
 

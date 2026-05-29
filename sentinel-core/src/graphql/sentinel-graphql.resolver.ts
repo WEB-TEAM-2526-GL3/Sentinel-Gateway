@@ -758,13 +758,17 @@ export class SentinelGraphqlResolver {
 
   private mapGatewayMetrics(metrics: GatewayMetrics): GatewayMetricsGql {
     return {
-      totalRequests: metrics.totalRequests,
-      requestsPerSecond: metrics.requestsPerSecond,
+      totalRequests: this.finiteNumberOrZero(metrics.totalRequests),
+      requestsPerSecond: this.finiteNumberOrZero(metrics.requestsPerSecond),
       statusCodes: Object.entries(metrics.statusCodes).map(([code, count]) => ({
         code,
-        count,
+        count: this.finiteNumberOrZero(count),
       })),
-      latency: metrics.latency,
+      latency: {
+        p50: this.finiteNumberOrNull(metrics.latency.p50),
+        p95: this.finiteNumberOrNull(metrics.latency.p95),
+        p99: this.finiteNumberOrNull(metrics.latency.p99),
+      },
     };
   }
 
@@ -868,5 +872,13 @@ export class SentinelGraphqlResolver {
     return Array.isArray(field)
       ? field.filter((item): item is string => typeof item === 'string')
       : undefined;
+  }
+
+  private finiteNumberOrNull(value: number | null | undefined): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+  }
+
+  private finiteNumberOrZero(value: number | null | undefined): number {
+    return this.finiteNumberOrNull(value) ?? 0;
   }
 }

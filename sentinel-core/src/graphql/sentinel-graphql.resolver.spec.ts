@@ -323,6 +323,26 @@ describe('SentinelGraphqlResolver', () => {
     expect(emitted.deliveries[0].status).toBe(WebhookDeliveryStatus.SUCCESS);
   });
 
+  it('sanitizes non-finite metric values for GraphQL floats', async () => {
+    services.metricsService.queryGatewayMetrics.mockResolvedValueOnce({
+      totalRequests: Number.NaN,
+      requestsPerSecond: Number.POSITIVE_INFINITY,
+      statusCodes: { '200': Number.NaN },
+      latency: {
+        p50: Number.NaN,
+        p95: Number.POSITIVE_INFINITY,
+        p99: 0,
+      },
+    });
+
+    const metrics = await resolver.gatewayMetrics(undefined, '5m');
+
+    expect(metrics.totalRequests).toBe(0);
+    expect(metrics.requestsPerSecond).toBe(0);
+    expect(metrics.statusCodes).toEqual([{ code: '200', count: 0 }]);
+    expect(metrics.latency).toEqual({ p50: null, p95: null, p99: 0 });
+  });
+
   it('rejects non-object webhook JSON payloads', async () => {
     await expect(
       resolver.emitWebhookEvent({

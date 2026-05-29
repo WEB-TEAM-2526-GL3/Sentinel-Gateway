@@ -104,6 +104,52 @@ describe('PrometheusService', () => {
     expect(metrics.statusCodes).toEqual({ 200: 12, 500: 3 });
   });
 
+  it('returns null latency percentiles when Prometheus returns NaN', async () => {
+    (httpMock.get as jest.Mock).mockImplementation(
+      (url: unknown, options: unknown) => {
+        const resolvedUrl = String(url);
+        const params =
+          typeof options === 'object' && options !== null
+            ? (options as { params?: { query?: string } })
+            : undefined;
+        const query = String(params?.params?.query ?? '');
+
+        if (query.includes('kong_upstream_latency_ms_bucket')) {
+          return of({
+            data: {
+              status: 'success',
+              data: {
+                resultType: 'vector',
+                result: [{ metric: {}, value: [0, 'NaN'] }],
+              },
+            },
+          });
+        }
+
+        console.log('unexpected prometheus request', {
+          url: resolvedUrl,
+          query,
+        });
+        return of({
+          data: {
+            status: 'success',
+            data: {
+              resultType: 'vector',
+              result: [],
+            },
+          },
+        });
+      },
+    );
+
+    const metrics = await service.queryGatewayMetrics({}, '5m');
+
+    expect(metrics.totalRequests).toBe(0);
+    expect(metrics.requestsPerSecond).toBe(0);
+    expect(metrics.statusCodes).toEqual({});
+    expect(metrics.latency).toEqual({ p50: null, p95: null, p99: null });
+  });
+
   it('logs query range output', async () => {
     (httpMock.get as jest.Mock).mockReturnValue(
       of({

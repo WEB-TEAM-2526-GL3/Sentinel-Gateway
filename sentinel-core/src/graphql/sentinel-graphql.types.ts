@@ -704,14 +704,14 @@ export class MetricsScopeInput {
 
 @ObjectType('LatencyMetrics')
 export class LatencyMetricsGql {
-  @Field(() => Float)
-  p50!: number;
+  @Field(() => Float, { nullable: true })
+  p50!: number | null;
 
-  @Field(() => Float)
-  p95!: number;
+  @Field(() => Float, { nullable: true })
+  p95!: number | null;
 
-  @Field(() => Float)
-  p99!: number;
+  @Field(() => Float, { nullable: true })
+  p99!: number | null;
 }
 
 @ObjectType('StatusCodeMetric')
