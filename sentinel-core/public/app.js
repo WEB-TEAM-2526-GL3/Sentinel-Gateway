@@ -1,400 +1,936 @@
 const app = document.getElementById('app');
 
+const TOKEN_KEY = 'sentinel_token';
+const state = {
+  currentView: 'overview',
+  me: null,
+  data: {
+    admins: [],
+    incidents: [],
+    gatewayServices: [],
+    gatewayRoutes: [],
+    gatewayConsumers: [],
+    monitoringRules: [],
+    monitoringStatus: null,
+    latestMetrics: null,
+    webhooks: [],
+    webhookDeliveries: [],
+    messengerEvents: [],
+    messengerRecipients: [],
+  },
+  errors: {},
+  sse: {
+    connected: false,
+    events: [],
+  },
+  eventSource: null,
+};
+
+const queries = {
+  me: `
+    query Me {
+      me { id email fullName role status createdAt }
+    }
+  `,
+  overview: `
+    query Overview {
+      incidents { id reason status severity createdAt serviceId providerId }
+      monitoringStatus { checkedAt totalRules activeRules triggeredRules }
+      gatewayServices { id name url host path protocol }
+    }
+  `,
+  admins: `
+    query Admins {
+      admins { id email fullName role status createdAt updatedAt }
+    }
+  `,
+  gateway: `
+    query Gateway {
+      gatewayServices { id name url host path protocol port }
+      gatewayRoutes { id name paths hosts methods stripPath }
+      gatewayConsumers { id username customId apiKey tags }
+    }
+  `,
+  incidents: `
+    query Incidents($status: IncidentStatus) {
+      incidents(status: $status) {
+        id reason status severity serviceId providerId createdAt updatedAt resolvedAt
+      }
+    }
+  `,
+  incident: `
+    query Incident($id: ID!) {
+      incident(id: $id) {
+        incident { id reason status severity serviceId providerId createdAt updatedAt resolvedAt }
+        logs { id action adminName detailsJson createdAt }
+      }
+    }
+  `,
+  monitoring: `
+    query Monitoring {
+      monitoringRules {
+        id name serviceName providerId type errorRateThreshold latencyThresholdMs
+        metricWindow cooldownMinutes isActive severity lastTriggeredAt createdAt
+      }
+      monitoringStatus {
+        checkedAt totalRules activeRules triggeredRules
+        results { ruleId ruleName serviceName type triggered currentValue threshold reason checkedAt }
+      }
+    }
+  `,
+  metrics: `
+    query Metrics {
+      latestGatewayMetrics {
+        totalRequests requestsPerSecond
+        statusCodes { code count }
+        latency { p50 p95 p99 }
+      }
+    }
+  `,
+  webhooks: `
+    query Webhooks {
+      webhooks { id name provider url eventTypes isActive hasSecret maxRetries createdAt updatedAt }
+      webhookDeliveries { id webhookId eventType source status attemptCount responseStatus error durationMs createdAt deliveredAt }
+      webhookEventTypes
+    }
+  `,
+  messenger: `
+    query Messenger {
+      messengerEvents(limit: 25) {
+        id senderId recipientId messageText postbackPayload timestamp receivedAt
+      }
+      messengerRecipients {
+        senderId lastMessageText lastSeenAt
+      }
+    }
+  `,
+};
+
+const mutations = {
+  login: `
+    mutation Login($input: LoginInput!) {
+      login(input: $input) {
+        accessToken
+        user { id email fullName role status }
+      }
+    }
+  `,
+  register: `
+    mutation Register($input: RegisterInput!) {
+      register(input: $input) {
+        accessToken
+        user { id email fullName role status }
+      }
+    }
+  `,
+  createGatewayService: `
+    mutation CreateGatewayService($input: GatewayServiceInput!) {
+      createGatewayService(input: $input) { id name url host path protocol }
+    }
+  `,
+  createIncident: `
+    mutation CreateIncident($input: CreateIncidentInput!) {
+      createIncident(input: $input) {
+        incident { id reason status severity createdAt }
+      }
+    }
+  `,
+  createMonitoringRule: `
+    mutation CreateMonitoringRule($input: CreateMonitoringRuleInput!) {
+      createMonitoringRule(input: $input) {
+        id name serviceName type severity isActive
+      }
+    }
+  `,
+  runMonitoringCheck: `
+    mutation RunMonitoringCheck {
+      runMonitoringCheck {
+        checkedAt totalRules activeRules triggeredRules
+      }
+    }
+  `,
+  createWebhook: `
+    mutation CreateWebhook($input: CreateWebhookInput!) {
+      createWebhook(input: $input) {
+        id name provider url eventTypes isActive hasSecret maxRetries
+      }
+    }
+  `,
+};
+
 function getToken() {
-    return localStorage.getItem('sentinel_token');
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 function saveToken(token) {
-    localStorage.setItem('sentinel_token', token);
+  localStorage.setItem(TOKEN_KEY, token);
 }
 
 function clearToken() {
-    localStorage.removeItem('sentinel_token');
+  localStorage.removeItem(TOKEN_KEY);
 }
 
 function navigate(path) {
-    window.history.pushState({}, '', path);
-    render();
+  window.history.pushState({}, '', path);
+  render();
 }
 
-async function apiFetch(path, options = {}) {
-    const token = getToken();
+async function gql(query, variables = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-    const headers = {
-        ...(options.headers || {}),
-    };
+  const response = await fetch('/graphql', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query, variables }),
+  });
 
-    if (options.body) {
-        headers['Content-Type'] = 'application/json';
+  const body = await response.json();
+  if (body.errors?.length) {
+    const message = body.errors.map((error) => error.message).join(', ');
+    if (message.toLowerCase().includes('unauthorized')) {
+      clearToken();
+      stopMetricsSse();
     }
+    throw new Error(message);
+  }
 
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-
-    const response = await fetch(path, {
-        ...options,
-        headers,
-    });
-
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
-
-    if (!response.ok) {
-        const message = Array.isArray(data?.message)
-            ? data.message.join(', ')
-            : data?.message || 'Request failed';
-
-        throw new Error(message);
-    }
-
-    return data;
+  return body.data;
 }
 
 function renderLogin() {
-    app.innerHTML = `
+  stopMetricsSse();
+  app.innerHTML = `
     <main class="auth-page">
       <section class="auth-card">
-        <h1>Sentinel Gateway</h1>
-        <p class="subtitle">Login to your dashboard</p>
+        <p class="eyebrow">Sentinel Gateway</p>
+        <h1>Unified Control Plane</h1>
+        <p class="subtitle">Sign in to manage gateway routes, incidents, monitoring, webhooks, and live metrics.</p>
 
         <form id="login-form">
-          <label>
-            Email
-            <input id="email" type="email" placeholder="admin@example.com" required />
-          </label>
-
-          <label>
-            Password
-            <input id="password" type="password" placeholder="Password" required />
-          </label>
-
-          <p id="error" class="error" style="display: none;"></p>
-
+          <label>Email<input id="email" type="email" placeholder="admin@sentinel.com" required /></label>
+          <label>Password<input id="password" type="password" placeholder="Password" required /></label>
+          <p id="error" class="error" hidden></p>
           <button type="submit">Login</button>
         </form>
 
-        <button class="link-button" id="go-register">
-          Need an account? Register
-        </button>
+        <button class="link-button" id="go-register" type="button">Create admin account</button>
       </section>
     </main>
   `;
 
-    document.getElementById('go-register').addEventListener('click', () => {
-        navigate('/register');
-    });
-
-    document.getElementById('login-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const errorElement = document.getElementById('error');
-        errorElement.style.display = 'none';
-
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        try {
-            const result = await apiFetch('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({
-                    email,
-                    password,
-                }),
-            });
-
-            saveToken(result.accessToken);
-            navigate('/dashboard');
-        } catch (error) {
-            errorElement.textContent = error.message;
-            errorElement.style.display = 'block';
-        }
-    });
+  document.getElementById('go-register').addEventListener('click', () => navigate('/register'));
+  document.getElementById('login-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    showInlineError('');
+    try {
+      const data = await gql(mutations.login, {
+        input: {
+          email: value('email'),
+          password: value('password'),
+        },
+      });
+      saveToken(data.login.accessToken);
+      navigate('/dashboard');
+    } catch (error) {
+      showInlineError(readError(error));
+    }
+  });
 }
 
 function renderRegister() {
-    app.innerHTML = `
+  stopMetricsSse();
+  app.innerHTML = `
     <main class="auth-page">
       <section class="auth-card">
-        <h1>Sentinel Gateway</h1>
-        <p class="subtitle">Create an admin account</p>
+        <p class="eyebrow">Sentinel Gateway</p>
+        <h1>Create Admin</h1>
+        <p class="subtitle">CEO secret is required for admin registration.</p>
 
         <form id="register-form">
-          <label>
-            Full name
-            <input id="fullName" type="text" placeholder="Admin name" required />
-          </label>
-
-          <label>
-            Email
-            <input id="email" type="email" placeholder="admin@example.com" required />
-          </label>
-
-          <label>
-            Password
-            <input id="password" type="password" placeholder="Minimum 6 characters" required minlength="6" />
-          </label>
-
-          <label>
-            CEO secret
-            <input id="ceoSecret" type="password" placeholder="CEO secret required" required />
-          </label>
-
-          <p id="error" class="error" style="display: none;"></p>
-
+          <label>Full name<input id="fullName" type="text" placeholder="Sentinel Admin" required /></label>
+          <label>Email<input id="email" type="email" placeholder="admin@sentinel.com" required /></label>
+          <label>Password<input id="password" type="password" placeholder="Minimum 6 characters" required minlength="6" /></label>
+          <label>CEO secret<input id="ceoSecret" type="password" required /></label>
+          <p id="error" class="error" hidden></p>
           <button type="submit">Register</button>
         </form>
 
-        <button class="link-button" id="go-login">
-          Already have an account? Login
-        </button>
+        <button class="link-button" id="go-login" type="button">Back to login</button>
       </section>
     </main>
   `;
 
-    document.getElementById('go-login').addEventListener('click', () => {
-        navigate('/login');
-    });
-
-    document.getElementById('register-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const errorElement = document.getElementById('error');
-        errorElement.style.display = 'none';
-
-        const fullName = document.getElementById('fullName').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const ceoSecret = document.getElementById('ceoSecret').value;
-
-        try {
-            const result = await apiFetch('/auth/register', {
-                method: 'POST',
-                body: JSON.stringify({
-                    fullName,
-                    email,
-                    password,
-                    ceoSecret,
-                }),
-            });
-
-            saveToken(result.accessToken);
-            navigate('/dashboard');
-        } catch (error) {
-            errorElement.textContent = error.message;
-            errorElement.style.display = 'block';
-        }
-    });
+  document.getElementById('go-login').addEventListener('click', () => navigate('/login'));
+  document.getElementById('register-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    showInlineError('');
+    try {
+      const data = await gql(mutations.register, {
+        input: {
+          fullName: value('fullName'),
+          email: value('email'),
+          password: value('password'),
+          ceoSecret: value('ceoSecret'),
+        },
+      });
+      saveToken(data.register.accessToken);
+      navigate('/dashboard');
+    } catch (error) {
+      showInlineError(readError(error));
+    }
+  });
 }
 
 async function renderDashboard() {
-    if (!getToken()) {
-        navigate('/login');
-        return;
-    }
+  if (!getToken()) {
+    navigate('/login');
+    return;
+  }
 
-    app.innerHTML = `
-    <main class="dashboard-page">
-      <header class="dashboard-header">
-        <div>
-          <h1>Dashboard</h1>
-          <p id="me-text">Loading current user...</p>
+  app.innerHTML = `
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">S</span>
+          <div>
+            <strong>Sentinel</strong>
+            <small>Gateway</small>
+          </div>
         </div>
+        <nav class="nav">
+          ${navButton('overview', 'Overview')}
+          ${navButton('gateway', 'Gateway')}
+          ${navButton('incidents', 'Incidents')}
+          ${navButton('monitoring', 'Monitoring')}
+          ${navButton('metrics', 'Live Metrics')}
+          ${navButton('webhooks', 'Webhooks')}
+          ${navButton('messenger', 'Messenger')}
+          ${navButton('admins', 'Admins')}
+        </nav>
+        <button class="incident-room-button" id="incident-room-button" type="button">Open Incident Room</button>
+      </aside>
 
-        <div class="header-actions">
-          <button id="whoami-button">Who am I?</button>
-          <button class="danger-light" id="logout-button">Logout</button>
-        </div>
-      </header>
-
-      <p id="error" class="error" style="display: none;"></p>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Users in database</h2>
-          <button id="refresh-button">Refresh</button>
-        </div>
-
-        <div class="table-wrapper" id="users-container">
-          Loading users...
-        </div>
+      <section class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Unified frontend</p>
+            <h1 id="view-title">Dashboard</h1>
+          </div>
+          <div class="top-actions">
+            <span id="sse-status" class="status-dot">SSE idle</span>
+            <span id="me-text" class="me-text">Loading user</span>
+            <button class="secondary" id="refresh-button" type="button">Refresh</button>
+            <button class="danger-light" id="logout-button" type="button">Logout</button>
+          </div>
+        </header>
+        <p id="global-error" class="error" hidden></p>
+        <div id="view"></div>
       </section>
     </main>
   `;
 
-    document.getElementById('logout-button').addEventListener('click', async () => {
-        try {
-            await apiFetch('/auth/logout', {
-                method: 'POST',
-            });
-        } catch {
-            // Token is stateless, so we clear it even if logout request fails.
-        }
+  bindDashboardEvents();
+  startMetricsSse();
+  await bootDashboard();
+}
 
-        clearToken();
-        navigate('/login');
+function navButton(view, label) {
+  const active = state.currentView === view ? 'active' : '';
+  return `<button class="nav-item ${active}" type="button" data-view="${view}">${label}</button>`;
+}
+
+function bindDashboardEvents() {
+  document.querySelectorAll('.nav-item').forEach((button) => {
+    button.addEventListener('click', async () => {
+      state.currentView = button.dataset.view;
+      renderDashboardShellOnly();
+      await loadViewData(state.currentView);
+      renderCurrentView();
     });
+  });
 
-    document.getElementById('whoami-button').addEventListener('click', async () => {
-        try {
-            const me = await apiFetch('/auth/me');
-            alert(`You are:\n\nName: ${me.fullName}\nEmail: ${me.email}\nRole: ${me.role}`);
-        } catch (error) {
-            showDashboardError(error.message);
-        }
+  document.getElementById('refresh-button').addEventListener('click', async () => {
+    await loadViewData(state.currentView);
+    renderCurrentView();
+  });
+
+  document.getElementById('logout-button').addEventListener('click', () => {
+    clearToken();
+    stopMetricsSse();
+    navigate('/login');
+  });
+
+  document.getElementById('incident-room-button').addEventListener('click', () => {
+    openIncidentRoom();
+  });
+}
+
+async function bootDashboard() {
+  try {
+    const data = await gql(queries.me);
+    state.me = data.me;
+    document.getElementById('me-text').textContent = `${data.me.fullName} · ${data.me.email}`;
+  } catch (error) {
+    showGlobalError(readError(error));
+    if (readError(error).toLowerCase().includes('unauthorized')) {
+      navigate('/login');
+      return;
+    }
+  }
+
+  await loadViewData(state.currentView);
+  renderCurrentView();
+}
+
+function renderDashboardShellOnly() {
+  document.querySelectorAll('.nav-item').forEach((button) => {
+    button.classList.toggle('active', button.dataset.view === state.currentView);
+  });
+}
+
+async function loadViewData(view) {
+  showGlobalError('');
+  try {
+    if (view === 'overview') {
+      const data = await gql(queries.overview);
+      state.data.incidents = data.incidents;
+      state.data.monitoringStatus = data.monitoringStatus;
+      state.data.gatewayServices = data.gatewayServices;
+    }
+    if (view === 'admins') {
+      state.data.admins = (await gql(queries.admins)).admins;
+    }
+    if (view === 'gateway') {
+      const data = await gql(queries.gateway);
+      state.data.gatewayServices = data.gatewayServices;
+      state.data.gatewayRoutes = data.gatewayRoutes;
+      state.data.gatewayConsumers = data.gatewayConsumers;
+    }
+    if (view === 'incidents') {
+      state.data.incidents = (await gql(queries.incidents, {})).incidents;
+    }
+    if (view === 'monitoring') {
+      const data = await gql(queries.monitoring);
+      state.data.monitoringRules = data.monitoringRules;
+      state.data.monitoringStatus = data.monitoringStatus;
+    }
+    if (view === 'metrics') {
+      state.data.latestMetrics = (await gql(queries.metrics)).latestGatewayMetrics;
+    }
+    if (view === 'webhooks') {
+      const data = await gql(queries.webhooks);
+      state.data.webhooks = data.webhooks;
+      state.data.webhookDeliveries = data.webhookDeliveries;
+      state.data.webhookEventTypes = data.webhookEventTypes;
+    }
+    if (view === 'messenger') {
+      const data = await gql(queries.messenger);
+      state.data.messengerEvents = data.messengerEvents;
+      state.data.messengerRecipients = data.messengerRecipients;
+    }
+  } catch (error) {
+    state.errors[view] = readError(error);
+    showGlobalError(readError(error));
+  }
+}
+
+function renderCurrentView() {
+  const titleMap = {
+    overview: 'Operations Overview',
+    gateway: 'Gateway Control',
+    incidents: 'Incidents',
+    monitoring: 'Monitoring Rules',
+    metrics: 'Realtime Metrics',
+    webhooks: 'Webhooks',
+    messenger: 'Messenger Inbound',
+    admins: 'Admins',
+  };
+  document.getElementById('view-title').textContent = titleMap[state.currentView];
+
+  if (state.currentView === 'overview') renderOverview();
+  if (state.currentView === 'gateway') renderGateway();
+  if (state.currentView === 'incidents') renderIncidents();
+  if (state.currentView === 'monitoring') renderMonitoring();
+  if (state.currentView === 'metrics') renderMetrics();
+  if (state.currentView === 'webhooks') renderWebhooks();
+  if (state.currentView === 'messenger') renderMessenger();
+  if (state.currentView === 'admins') renderAdmins();
+}
+
+function renderOverview() {
+  const incidents = state.data.incidents || [];
+  const open = incidents.filter((incident) => incident.status !== 'RESOLVED');
+  const services = state.data.gatewayServices || [];
+  const status = state.data.monitoringStatus;
+
+  setView(`
+    <section class="kpi-grid">
+      ${kpi('Open incidents', open.length)}
+      ${kpi('Gateway services', services.length)}
+      ${kpi('Monitoring rules', status?.totalRules ?? 0)}
+      ${kpi('Triggered rules', status?.triggeredRules ?? 0)}
+    </section>
+    <section class="split-grid">
+      ${panel('Open Incidents', renderIncidentCards(open.slice(0, 6)))}
+      ${panel('Gateway Services', renderServiceCards(services.slice(0, 6)))}
+    </section>
+  `);
+}
+
+function renderGateway() {
+  setView(`
+    <section class="split-grid">
+      ${panel('Create Service', `
+        <form id="service-form" class="inline-form">
+          <label>Name<input id="service-name" placeholder="openrouter-service" required /></label>
+          <label>URL<input id="service-url" placeholder="https://openrouter.ai/api" required /></label>
+          <label>Route path<input id="service-path" placeholder="/openrouter" /></label>
+          <button type="submit">Create</button>
+        </form>
+      `)}
+      ${panel('Services', renderServiceCards(state.data.gatewayServices))}
+    </section>
+    <section class="split-grid">
+      ${panel('Routes', renderRouteTable(state.data.gatewayRoutes))}
+      ${panel('Consumers', renderConsumerTable(state.data.gatewayConsumers))}
+    </section>
+  `);
+
+  document.getElementById('service-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const routePath = value('service-path');
+    const input = {
+      name: value('service-name'),
+      url: value('service-url'),
+      route: routePath ? { paths: [routePath], stripPath: true } : null,
+    };
+    if (!input.route) delete input.route;
+    await gql(mutations.createGatewayService, { input });
+    await loadViewData('gateway');
+    renderGateway();
+  });
+}
+
+function renderIncidents() {
+  setView(`
+    <section class="split-grid">
+      ${panel('Create Incident', `
+        <form id="incident-form" class="inline-form">
+          <label>Service UUID<input id="incident-service" value="22222222-2222-4222-8222-222222222222" required /></label>
+          <label>Provider UUID<input id="incident-provider" value="33333333-3333-4333-8333-333333333333" required /></label>
+          <label>Reason<input id="incident-reason" placeholder="OpenAI timeout spike" required /></label>
+          <label>Severity<select id="incident-severity"><option>LOW</option><option>MEDIUM</option><option selected>HIGH</option><option>CRITICAL</option></select></label>
+          <button type="submit">Create</button>
+        </form>
+      `)}
+      ${panel('Incident Room', `
+        <p class="muted">Realtime collaboration, presence, chat, ack and resolve are kept in the dedicated incident room frontend.</p>
+        <button id="incident-room-panel-button" type="button">Open Incident Room</button>
+      `)}
+    </section>
+    ${panel('All Incidents', renderIncidentCards(state.data.incidents))}
+  `);
+
+  document.getElementById('incident-room-panel-button').addEventListener('click', () => {
+    openIncidentRoom();
+  });
+  document.getElementById('incident-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await gql(mutations.createIncident, {
+      input: {
+        serviceId: value('incident-service'),
+        providerId: value('incident-provider'),
+        reason: value('incident-reason'),
+        severity: value('incident-severity'),
+        adminId: state.me?.id ?? 'frontend-admin',
+        adminName: state.me?.fullName ?? 'Frontend Admin',
+      },
     });
-
-    document.getElementById('refresh-button').addEventListener('click', loadDashboardData);
-
-    await loadDashboardData();
+    await loadViewData('incidents');
+    renderIncidents();
+  });
 }
 
-function showDashboardError(message) {
-    const errorElement = document.getElementById('error');
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
+function renderMonitoring() {
+  const report = state.data.monitoringStatus;
+  setView(`
+    <section class="kpi-grid">
+      ${kpi('Total rules', report?.totalRules ?? 0)}
+      ${kpi('Active rules', report?.activeRules ?? 0)}
+      ${kpi('Triggered', report?.triggeredRules ?? 0)}
+      ${kpi('Last check', report?.checkedAt ? time(report.checkedAt) : 'Never')}
+    </section>
+    <section class="split-grid">
+      ${panel('Create Rule', `
+        <form id="rule-form" class="inline-form">
+          <label>Name<input id="rule-name" placeholder="openai-latency-high" required /></label>
+          <label>Service name<input id="rule-service" placeholder="openai-svc" required /></label>
+          <label>Type<select id="rule-type"><option>ERROR_RATE</option><option selected>LATENCY_P95</option><option>UPSTREAM_HEALTH</option></select></label>
+          <label>Threshold<input id="rule-threshold" type="number" step="0.01" value="1000" /></label>
+          <label>Severity<select id="rule-severity"><option>LOW</option><option>MEDIUM</option><option selected>HIGH</option><option>CRITICAL</option></select></label>
+          <button type="submit">Create</button>
+        </form>
+        <button class="secondary wide" id="run-check" type="button">Run Check Now</button>
+      `)}
+      ${panel('Check Results', renderCheckResults(report?.results || []))}
+    </section>
+    ${panel('Rules', renderRuleTable(state.data.monitoringRules))}
+  `);
+
+  document.getElementById('run-check').addEventListener('click', async () => {
+    await gql(mutations.runMonitoringCheck);
+    await loadViewData('monitoring');
+    renderMonitoring();
+  });
+  document.getElementById('rule-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const type = value('rule-type');
+    const threshold = Number(value('rule-threshold'));
+    const input = {
+      name: value('rule-name'),
+      serviceName: value('rule-service'),
+      type,
+      severity: value('rule-severity'),
+      metricWindow: '5m',
+      cooldownMinutes: 15,
+    };
+    if (type === 'ERROR_RATE') input.errorRateThreshold = threshold;
+    if (type === 'LATENCY_P95') input.latencyThresholdMs = Math.max(1, Math.round(threshold));
+    await gql(mutations.createMonitoringRule, { input });
+    await loadViewData('monitoring');
+    renderMonitoring();
+  });
 }
 
-async function loadDashboardData() {
-    try {
-        const me = await apiFetch('/auth/me');
-        const users = await apiFetch('/dashboard/admins');
+function renderMetrics() {
+  setView(`
+    <section class="split-grid">
+      ${panel('Latest Cached Metrics', renderMetricsCard(state.data.latestMetrics))}
+      ${panel('Realtime SSE Stream', `
+        <div class="stream-status ${state.sse.connected ? 'ok' : 'warn'}">${state.sse.connected ? 'Connected to /metrics/sse' : 'Waiting for /metrics/sse'}</div>
+        <div class="event-log">
+          ${state.sse.events.length ? state.sse.events.map(renderEventLog).join('') : '<p class="empty">No SSE metrics events yet.</p>'}
+        </div>
+      `)}
+    </section>
+  `);
+}
 
-        document.getElementById('me-text').innerHTML = `
-      Logged in as <strong>${escapeHtml(me.fullName)} (${escapeHtml(me.email)})</strong>
-    `;
+function renderWebhooks() {
+  const eventTypes = state.data.webhookEventTypes || ['INCIDENT_CREATED'];
+  setView(`
+    <section class="split-grid">
+      ${panel('Create Webhook', `
+        <form id="webhook-form" class="inline-form">
+          <label>Name<input id="webhook-name" placeholder="Slack Incidents" required /></label>
+          <label>Provider<select id="webhook-provider"><option>GENERIC</option><option>DISCORD</option><option>SLACK</option></select></label>
+          <label>URL<input id="webhook-url" placeholder="https://webhook.site/..." required /></label>
+          <label>Event type<select id="webhook-event">${eventTypes.map((eventType) => `<option>${escapeHtml(eventType)}</option>`).join('')}</select></label>
+          <button type="submit">Create</button>
+        </form>
+      `)}
+      ${panel('Deliveries', renderDeliveryTable(state.data.webhookDeliveries))}
+    </section>
+    ${panel('Webhooks', renderWebhookTable(state.data.webhooks))}
+  `);
 
-        renderUsersTable(users, me);
-    } catch (error) {
-        if (error.message.includes('Unauthorized')) {
-            clearToken();
-            navigate('/login');
-            return;
-        }
+  document.getElementById('webhook-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await gql(mutations.createWebhook, {
+      input: {
+        name: value('webhook-name'),
+        provider: value('webhook-provider'),
+        url: value('webhook-url'),
+        eventTypes: [value('webhook-event')],
+        isActive: true,
+        maxRetries: 3,
+      },
+    });
+    await loadViewData('webhooks');
+    renderWebhooks();
+  });
+}
 
-        showDashboardError(error.message);
+function renderMessenger() {
+  setView(`
+    <section class="split-grid">
+      ${panel('Recipients', renderRecipients(state.data.messengerRecipients))}
+      ${panel('Inbound Events', renderMessengerEvents(state.data.messengerEvents))}
+    </section>
+  `);
+}
+
+function renderAdmins() {
+  setView(panel('Admins', renderAdminTable(state.data.admins)));
+}
+
+function startMetricsSse() {
+  if (state.eventSource) return;
+  const source = new EventSource('/metrics/sse');
+  state.eventSource = source;
+  source.onopen = () => {
+    state.sse.connected = true;
+    updateSseStatus();
+  };
+  source.onerror = () => {
+    state.sse.connected = false;
+    updateSseStatus();
+  };
+  ['metrics.updated', 'metrics.poll.failed', 'health.changed'].forEach((eventName) => {
+    source.addEventListener(eventName, (event) => {
+      pushSseEvent(eventName, event.data);
+    });
+  });
+  source.onmessage = (event) => pushSseEvent('message', event.data);
+}
+
+function stopMetricsSse() {
+  if (state.eventSource) {
+    state.eventSource.close();
+    state.eventSource = null;
+  }
+  state.sse.connected = false;
+}
+
+async function openIncidentRoom() {
+  try {
+    const response = await fetch('/incident-room/index.html', { method: 'HEAD' });
+    if (response.ok) {
+      window.location.href = '/incident-room/';
+      return;
     }
+  } catch {
+    // Fall through to the standalone Vite dev server.
+  }
+  window.location.href = 'http://localhost:5173';
 }
 
-function renderUsersTable(users, me) {
-    const container = document.getElementById('users-container');
+function pushSseEvent(type, rawData) {
+  let parsed = rawData;
+  try {
+    parsed = JSON.parse(rawData);
+  } catch {
+    parsed = rawData;
+  }
+  state.sse.events.unshift({
+    type,
+    at: new Date().toISOString(),
+    data: parsed,
+  });
+  state.sse.events = state.sse.events.slice(0, 20);
+  updateSseStatus();
+  if (state.currentView === 'metrics') renderMetrics();
+}
 
-    if (!users.length) {
-        container.innerHTML = '<p>No users found.</p>';
-        return;
-    }
+function updateSseStatus() {
+  const el = document.getElementById('sse-status');
+  if (!el) return;
+  el.textContent = state.sse.connected ? 'SSE live' : 'SSE offline';
+  el.classList.toggle('online', state.sse.connected);
+}
 
-    container.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Full name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Created</th>
-          <th>Action</th>
-        </tr>
-      </thead>
+function kpi(label, valueText) {
+  return `<article class="kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(valueText)}</strong></article>`;
+}
 
-      <tbody>
-        ${users
-            .map((user) => {
-                const isMe = user.id === me.id;
-                const isActive = user.status === 'ACTIVE';
+function panel(title, content) {
+  return `<section class="panel"><div class="panel-header"><h2>${escapeHtml(title)}</h2></div>${content}</section>`;
+}
 
-                return `
-              <tr>
-                <td>${escapeHtml(user.fullName)}</td>
-                <td>${escapeHtml(user.email)}</td>
-                <td>${escapeHtml(user.role)}</td>
-                <td>
-                  <span class="badge ${String(user.status).toLowerCase()}">
-                    ${escapeHtml(user.status)}
-                  </span>
-                </td>
-                <td>${user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}</td>
-                <td>
-                  <button
-                    class="danger delete-button"
-                    data-id="${user.id}"
-                    data-name="${escapeHtml(user.fullName)}"
-                    ${isMe || !isActive ? 'disabled' : ''}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            `;
-            })
-            .join('')}
-      </tbody>
-    </table>
+function renderServiceCards(services = []) {
+  if (!services.length) return '<p class="empty">No services loaded.</p>';
+  return `<div class="card-list">${services.map((service) => `
+    <article class="item-card">
+      <strong>${escapeHtml(service.name || service.id || 'Unnamed service')}</strong>
+      <span>${escapeHtml(service.url || service.host || 'No URL')}</span>
+      <small>${escapeHtml(service.protocol || '')} ${escapeHtml(service.path || '')}</small>
+    </article>
+  `).join('')}</div>`;
+}
+
+function renderIncidentCards(incidents = []) {
+  if (!incidents.length) return '<p class="empty">No incidents found.</p>';
+  return `<div class="card-list">${incidents.map((incident) => `
+    <article class="item-card">
+      <div class="item-line">
+        <strong>${escapeHtml(incident.reason)}</strong>
+        <span class="badge ${String(incident.status).toLowerCase()}">${escapeHtml(incident.status)}</span>
+      </div>
+      <span>${escapeHtml(incident.severity)} · ${time(incident.createdAt)}</span>
+      <small>${escapeHtml(incident.id)}</small>
+    </article>
+  `).join('')}</div>`;
+}
+
+function renderRouteTable(routes = []) {
+  return table(['Name', 'Paths', 'Methods', 'Strip'], routes.map((route) => [
+    route.name || route.id || '-',
+    (route.paths || []).join(', '),
+    (route.methods || []).join(', ') || 'ANY',
+    route.stripPath ? 'yes' : 'no',
+  ]));
+}
+
+function renderConsumerTable(consumers = []) {
+  return table(['Username', 'Custom ID', 'API key'], consumers.map((consumer) => [
+    consumer.username || consumer.id || '-',
+    consumer.customId || '-',
+    consumer.apiKey || '-',
+  ]));
+}
+
+function renderRuleTable(rules = []) {
+  return table(['Name', 'Service', 'Type', 'Severity', 'Active'], rules.map((rule) => [
+    rule.name,
+    rule.serviceName,
+    rule.type,
+    rule.severity,
+    rule.isActive ? 'yes' : 'no',
+  ]));
+}
+
+function renderCheckResults(results = []) {
+  return table(['Rule', 'Value', 'Threshold', 'State'], results.map((result) => [
+    result.ruleName,
+    String(result.currentValue),
+    String(result.threshold),
+    result.triggered ? `Triggered: ${result.reason || ''}` : 'OK',
+  ]));
+}
+
+function renderMetricsCard(metrics) {
+  if (!metrics) return '<p class="empty">No cached metrics yet. Wait for Prometheus polling or check SSE events.</p>';
+  return `
+    <div class="metrics-grid">
+      ${kpi('Total requests', metrics.totalRequests)}
+      ${kpi('Requests/sec', metrics.requestsPerSecond)}
+      ${kpi('P95 latency', `${metrics.latency.p95}ms`)}
+      ${kpi('P99 latency', `${metrics.latency.p99}ms`)}
+    </div>
+    ${table(['Status', 'Count'], metrics.statusCodes.map((item) => [item.code, String(item.count)]))}
   `;
-
-    document.querySelectorAll('.delete-button').forEach((button) => {
-        button.addEventListener('click', async () => {
-            const userId = button.dataset.id;
-            const fullName = button.dataset.name;
-
-            const ceoSecret = prompt(`Enter CEO secret to delete ${fullName}:`);
-
-            if (!ceoSecret) {
-                return;
-            }
-
-            const confirmed = confirm(`Are you sure you want to delete ${fullName}?`);
-
-            if (!confirmed) {
-                return;
-            }
-
-            try {
-                await apiFetch(`/dashboard/admins/${userId}`, {
-                    method: 'DELETE',
-                    body: JSON.stringify({
-                        ceoSecret,
-                    }),
-                });
-
-                await loadDashboardData();
-            } catch (error) {
-                alert(error.message);
-            }
-        });
-    });
 }
 
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+function renderEventLog(event) {
+  return `
+    <article class="event-row">
+      <strong>${escapeHtml(event.type)}</strong>
+      <small>${time(event.at)}</small>
+      <pre>${escapeHtml(JSON.stringify(event.data, null, 2))}</pre>
+    </article>
+  `;
+}
+
+function renderWebhookTable(webhooks = []) {
+  return table(['Name', 'Provider', 'Events', 'Active', 'URL'], webhooks.map((webhook) => [
+    webhook.name,
+    webhook.provider,
+    webhook.eventTypes.join(', '),
+    webhook.isActive ? 'yes' : 'no',
+    webhook.url,
+  ]));
+}
+
+function renderDeliveryTable(deliveries = []) {
+  return table(['Webhook', 'Event', 'Status', 'Attempts', 'Created'], deliveries.map((delivery) => [
+    delivery.webhookId,
+    delivery.eventType,
+    delivery.status,
+    String(delivery.attemptCount),
+    time(delivery.createdAt),
+  ]));
+}
+
+function renderRecipients(recipients = []) {
+  return table(['Sender', 'Last message', 'Last seen'], recipients.map((recipient) => [
+    recipient.senderId,
+    recipient.lastMessageText || '-',
+    time(recipient.lastSeenAt),
+  ]));
+}
+
+function renderMessengerEvents(events = []) {
+  return table(['Sender', 'Message', 'Postback', 'Received'], events.map((event) => [
+    event.senderId || '-',
+    event.messageText || '-',
+    event.postbackPayload || '-',
+    time(event.receivedAt),
+  ]));
+}
+
+function renderAdminTable(admins = []) {
+  return table(['Name', 'Email', 'Role', 'Status', 'Created'], admins.map((admin) => [
+    admin.fullName,
+    admin.email,
+    admin.role,
+    admin.status || '-',
+    time(admin.createdAt),
+  ]));
+}
+
+function table(headers, rows) {
+  if (!rows.length) return '<p class="empty">No data.</p>';
+  return `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>${headers.map((head) => `<th>${escapeHtml(head)}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function setView(html) {
+  document.getElementById('view').innerHTML = html;
+}
+
+function showInlineError(message) {
+  const el = document.getElementById('error');
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = !message;
+}
+
+function showGlobalError(message) {
+  const el = document.getElementById('global-error');
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = !message;
+}
+
+function value(id) {
+  return document.getElementById(id).value.trim();
+}
+
+function time(valueText) {
+  if (!valueText) return '-';
+  const date = new Date(valueText);
+  return Number.isNaN(date.getTime()) ? String(valueText) : date.toLocaleString();
+}
+
+function readError(error) {
+  return error instanceof Error ? error.message : 'Unexpected error';
+}
+
+function escapeHtml(valueText) {
+  return String(valueText ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function render() {
-    const path = window.location.pathname;
-
-    if (path === '/' || path === '/login') {
-        renderLogin();
-        return;
-    }
-
-    if (path === '/register') {
-        renderRegister();
-        return;
-    }
-
-    if (path === '/dashboard') {
-        renderDashboard();
-        return;
-    }
-
-    navigate('/login');
+  const path = window.location.pathname;
+  if (path === '/' || path === '/login') return renderLogin();
+  if (path === '/register') return renderRegister();
+  return renderDashboard();
 }
 
 window.addEventListener('popstate', render);
-
 render();
